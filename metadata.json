@@ -1,0 +1,6 @@
+{
+  "name": "Slope Shield",
+  "description": "AI Landslide Early Warning & Regional Disaster Intelligence Command Center for Northeast India (SIH PS 26001 - Team NEXORA)",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
