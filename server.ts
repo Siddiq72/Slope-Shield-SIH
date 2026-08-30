@@ -43,6 +43,35 @@ function getGeminiClient(): GoogleGenAI | null {
 }
 
 // -----------------------------------------------------------------------------
+// SCENARIO ENGINE — In-Memory State Store
+// Allows the frontend to sync demo stage with backend so refreshBackendData()
+// returns stage-matching telemetry.
+// -----------------------------------------------------------------------------
+interface ScenarioState {
+  stage: 1 | 2 | 3 | 4 | 5;
+  scenarioId: string;
+  updatedAt: string;
+}
+
+const STAGE_WEATHER: Record<number, { rainfallRateMmHr: number; accumulation24hMm: number; intensityLabel: string; trend: string; humidityPct: number }> = {
+  1: { rainfallRateMmHr: 4,    accumulation24hMm: 16,    intensityLabel: 'NORMAL',           trend: 'STABLE',     humidityPct: 72 },
+  2: { rainfallRateMmHr: 22,   accumulation24hMm: 52,    intensityLabel: 'MODERATE RAIN',     trend: 'INCREASING', humidityPct: 82 },
+  3: { rainfallRateMmHr: 34,   accumulation24hMm: 86,    intensityLabel: 'HEAVY DOWNPOUR',    trend: 'INCREASING', humidityPct: 90 },
+  4: { rainfallRateMmHr: 40,   accumulation24hMm: 104,   intensityLabel: 'HEAVY DOWNPOUR',    trend: 'INCREASING', humidityPct: 93 },
+  5: { rainfallRateMmHr: 42.5, accumulation24hMm: 168.4, intensityLabel: 'TORRENTIAL MONSOON', trend: 'INCREASING', humidityPct: 95 },
+};
+
+const STAGE_ZONE_N07: Record<number, { riskScore: number; riskLevel: string; soilMoisturePct: number; porePressureKPa: number; insarDisplacementMm: number; slopeInstabilityPct: number; roadStatus: string }> = {
+  1: { riskScore: 38, riskLevel: 'LOW',      soilMoisturePct: 34, porePressureKPa: 14.2, insarDisplacementMm: 0.6,  slopeInstabilityPct: 28, roadStatus: 'OPEN' },
+  2: { riskScore: 58, riskLevel: 'MODERATE', soilMoisturePct: 48, porePressureKPa: 26.5, insarDisplacementMm: 1.8,  slopeInstabilityPct: 49, roadStatus: 'OPEN' },
+  3: { riskScore: 76, riskLevel: 'HIGH',     soilMoisturePct: 62, porePressureKPa: 42.0, insarDisplacementMm: 4.1,  slopeInstabilityPct: 68, roadStatus: 'AT RISK' },
+  4: { riskScore: 86, riskLevel: 'HIGH',     soilMoisturePct: 70, porePressureKPa: 52.6, insarDisplacementMm: 6.8,  slopeInstabilityPct: 76, roadStatus: 'AT RISK' },
+  5: { riskScore: 92, riskLevel: 'CRITICAL', soilMoisturePct: 74, porePressureKPa: 58.4, insarDisplacementMm: 8.4,  slopeInstabilityPct: 79, roadStatus: 'AT RISK' },
+};
+
+let activeScenario: ScenarioState = { stage: 5, scenarioId: 'aizawl-monsoon', updatedAt: new Date().toISOString() };
+
+// -----------------------------------------------------------------------------
 // 1. Health & Integration Status API
 // -----------------------------------------------------------------------------
 app.get("/api/health", (_req, res) => {
@@ -50,7 +79,8 @@ app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
     node: "Slope Shield Early Warning Full-Stack REST Grid (:3000 / FastAPI Spec)",
-    phase: "Phase 3: Persistent Database & Historical Event Architecture",
+    phase: "Phase 4: End-to-End Demo & Intelligence Engine",
+    activeScenario,
     database: {
       type: "SQLite / Local Persistent Storage Engine",
       status: dbInfo.status,
@@ -62,6 +92,34 @@ app.get("/api/health", (_req, res) => {
     dataMode: "CALIBRATED SIMULATION (NORTHEAST INDIA DOMAIN)",
     geminiLive: Boolean(process.env.GEMINI_API_KEY),
     timestamp: new Date().toISOString()
+  });
+});
+
+// -----------------------------------------------------------------------------
+// 1b. Scenario State Sync API
+// -----------------------------------------------------------------------------
+app.post("/api/scenario", (req, res) => {
+  const { stage, scenarioId } = req.body;
+  if (stage && [1, 2, 3, 4, 5].includes(Number(stage))) {
+    activeScenario = {
+      stage: Number(stage) as 1 | 2 | 3 | 4 | 5,
+      scenarioId: scenarioId || activeScenario.scenarioId,
+      updatedAt: new Date().toISOString()
+    };
+  }
+  res.json({ success: true, activeScenario });
+});
+
+app.get("/api/scenario-state", (_req, res) => {
+  const stageData = STAGE_WEATHER[activeScenario.stage];
+  const zoneData = STAGE_ZONE_N07[activeScenario.stage];
+  res.json({
+    success: true,
+    activeScenario,
+    stageWeather: stageData,
+    stageZoneN07: zoneData,
+    factorOfSafety: Number((1.85 - (zoneData.riskScore / 100) * 1.1).toFixed(2)),
+    ruptureHorizonHours: zoneData.riskScore >= 85 ? 2.5 : zoneData.riskScore >= 70 ? 5.0 : 12.0
   });
 });
 
@@ -94,22 +152,18 @@ app.get("/api/dashboard", (_req, res) => {
         stationId: 'AWS-NER-07',
         zoneCode: 'N-07',
         location: 'Aizawl West Doppler Station',
-        rainfallRateMmHr: 42.5,
-        intensityLabel: 'TORRENTIAL MONSOON',
-        accumulation24hMm: 168.4,
+        ...STAGE_WEATHER[activeScenario.stage],
         accumulation72hMm: 312.0,
-        trend: 'INCREASING',
-        humidityPct: 95,
         windSpeedKmh: 28,
         pressureHpa: 986,
         isSimulatedFeed: true,
         hourlyForecast: [
-          { time: '14:00', rate: 42.5, probability: 95 },
-          { time: '15:00', rate: 48.0, probability: 90 },
-          { time: '16:00', rate: 52.0, probability: 88 },
-          { time: '17:00', rate: 38.0, probability: 82 },
-          { time: '18:00', rate: 26.0, probability: 75 },
-          { time: '19:00', rate: 18.0, probability: 60 }
+          { time: '14:00', rate: STAGE_WEATHER[activeScenario.stage].rainfallRateMmHr, probability: 95 },
+          { time: '15:00', rate: Math.round(STAGE_WEATHER[activeScenario.stage].rainfallRateMmHr * 1.12), probability: 90 },
+          { time: '16:00', rate: Math.round(STAGE_WEATHER[activeScenario.stage].rainfallRateMmHr * 1.22), probability: 88 },
+          { time: '17:00', rate: Math.round(STAGE_WEATHER[activeScenario.stage].rainfallRateMmHr * 0.90), probability: 82 },
+          { time: '18:00', rate: Math.round(STAGE_WEATHER[activeScenario.stage].rainfallRateMmHr * 0.60), probability: 75 },
+          { time: '19:00', rate: Math.round(STAGE_WEATHER[activeScenario.stage].rainfallRateMmHr * 0.40), probability: 60 }
         ]
       },
       satellite: {

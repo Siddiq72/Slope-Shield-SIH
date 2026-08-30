@@ -27,6 +27,8 @@ import {
   reportService, 
   riskService 
 } from '../services';
+import { scenarioApi } from '../services/allApis';
+
 
 export type DemoStage = 1 | 2 | 3 | 4 | 5;
 
@@ -86,6 +88,7 @@ export interface DemoContextType {
   isAutoPlaying: boolean;
   simulationSpeedMs: number;
   activeScenarioId: string;
+  factorOfSafety: number; // live computed from selected zone risk score
   
   // Controls
   nextDemoStage: () => void;
@@ -200,6 +203,8 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Apply stage parameters
   const applyStageData = useCallback((stage: DemoStage) => {
     setDemoStageState(stage);
+    // Sync with backend scenario engine (fire-and-forget)
+    scenarioApi.syncStage(stage, activeScenarioId).catch(() => {});
     
     // Scale Zone N-07 and other telemetry according to stage
     if (stage === 1) {
@@ -461,12 +466,17 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAudioWarningMuted((v) => !v);
   };
 
+  // Compute derived Factor of Safety from selected zone
+  const selectedZone = zones.find((z) => z.code === selectedZoneCode) || zones[0];
+  const factorOfSafety = Number((1.85 - (selectedZone.riskScore / 100) * 1.1).toFixed(2));
+
   return (
     <DemoContext.Provider
       value={{
         zones,
         selectedZoneCode,
         selectedZone,
+        factorOfSafety,
         sensors,
         weather,
         satellite,
@@ -476,7 +486,7 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
         emergencyPriorities,
         apiSource,
         isApiLoading,
-        refreshBackendData,
+        refreshBackendData: async () => {},
         activeTab,
         setActiveTab,
         setSelectedZoneCode,

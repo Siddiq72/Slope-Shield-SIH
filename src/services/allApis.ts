@@ -75,6 +75,8 @@ export const systemHealthApi = {
     phase: string;
     geminiLive: boolean;
     timestamp: string;
+    activeScenario?: { stage: number; scenarioId: string; updatedAt: string };
+    database?: { status: string; recordCount: number; reportsCount: number; alertsCount: number; storageMode: string };
   }> {
     try {
       const res = await apiClient.get<{
@@ -83,6 +85,8 @@ export const systemHealthApi = {
         phase: string;
         geminiLive: boolean;
         timestamp: string;
+        activeScenario?: { stage: number; scenarioId: string; updatedAt: string };
+        database?: { status: string; recordCount: number; reportsCount: number; alertsCount: number; storageMode: string };
       }>('/health');
       return res.data;
     } catch (e) {
@@ -90,10 +94,38 @@ export const systemHealthApi = {
       return {
         status: 'ok',
         node: 'Northeast India Landslide Early Warning Grid (Local Mode)',
-        phase: 'Phase 2: Full-Stack Integration (FastAPI / Express REST Contract)',
+        phase: 'Phase 4: End-to-End Demo & Intelligence Engine',
         geminiLive: false,
         timestamp: new Date().toISOString(),
       };
+    }
+  }
+};
+
+// Scenario sync API — silently notifies the backend of the active demo stage
+export const scenarioApi = {
+  async syncStage(stage: number, scenarioId: string): Promise<void> {
+    try {
+      await apiClient.post('/scenario', { stage, scenarioId });
+    } catch (e) {
+      // Fire-and-forget — non-critical
+      console.debug('Scenario sync skipped (offline):', e);
+    }
+  },
+  async getState(): Promise<{
+    activeScenario: { stage: number; scenarioId: string; updatedAt: string };
+    factorOfSafety: number;
+    ruptureHorizonHours: number;
+  } | null> {
+    try {
+      const res = await apiClient.get<{
+        activeScenario: { stage: number; scenarioId: string; updatedAt: string };
+        factorOfSafety: number;
+        ruptureHorizonHours: number;
+      }>('/scenario-state');
+      return res.data;
+    } catch {
+      return null;
     }
   }
 };
