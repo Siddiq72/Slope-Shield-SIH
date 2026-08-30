@@ -84,7 +84,7 @@ export function computeParametricSimulation(params: {
       )
     )
   );
-  const severity = score >= 85 ? 'CRITICAL' : score >= 70 ? 'HIGH' : score >= 45 ? 'MODERATE' : 'LOW';
+  const severity: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' = score >= 85 ? 'CRITICAL' : score >= 70 ? 'HIGH' : score >= 45 ? 'MODERATE' : 'LOW';
   
   return {
     simulatedRiskScore: score,

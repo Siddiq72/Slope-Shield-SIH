@@ -1,4 +1,5 @@
 import React from 'react';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface MetricCardProps {
   id?: string;
@@ -30,88 +31,97 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   const getHighlightStyle = () => {
     switch (riskHighlight) {
       case 'CRITICAL':
-        return 'bg-[#142338] border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
+        return 'bg-[#0E1726] border-rose-500/50 shadow-[0_0_20px_rgba(239,68,68,0.15)] hover:border-rose-400';
       case 'HIGH':
-        return 'bg-[#101D2E] border border-[#1e293b] ring-1 ring-orange-500/30 shadow-lg';
+        return 'bg-[#0B1728] border-orange-500/40 shadow-[0_0_15px_rgba(249,115,22,0.1)] hover:border-orange-400';
       case 'MODERATE':
-        return 'bg-[#101D2E] border border-[#1e293b] ring-1 ring-amber-500/20 shadow-lg';
+        return 'bg-[#0B1728] border-amber-500/30 hover:border-amber-400';
       case 'LOW':
-        return 'bg-[#101D2E] border border-[#1e293b] shadow-lg';
+        return 'bg-[#0B1728] border-emerald-500/30 hover:border-emerald-400';
       case 'CYAN':
-        return 'bg-[#101D2E] border border-[#1e293b] shadow-lg';
+        return 'bg-[#0B1728] border-cyan-500/30 shadow-[0_0_15px_rgba(0,212,255,0.08)] hover:border-cyan-400';
       case 'VIOLET':
-        return 'bg-[#101D2E] border border-[#1e293b] shadow-lg';
+        return 'bg-[#0B1728] border-violet-500/30 shadow-[0_0_15px_rgba(139,92,246,0.1)] hover:border-violet-400';
       default:
-        return 'bg-[#101D2E] border border-[#1e293b] shadow-lg';
+        return 'bg-[#0B1728] border-[#1c2e47] hover:border-[#2b496e]';
     }
   };
 
   const getValueColor = () => {
     switch (riskHighlight) {
       case 'CRITICAL':
-        return 'text-red-500';
+        return 'text-rose-400';
       case 'HIGH':
-        return 'text-orange-500';
+        return 'text-orange-400';
       case 'MODERATE':
-        return 'text-amber-500';
+        return 'text-amber-400';
       case 'LOW':
         return 'text-emerald-400';
       case 'CYAN':
-        return 'text-white';
+        return 'text-cyan-300';
       case 'VIOLET':
-        return 'text-[#7C5CFF]';
+        return 'text-violet-300';
       default:
-        return 'text-white';
+        return 'text-slate-100';
     }
+  };
+
+  const getTrendColor = () => {
+    if (trend === 'up') {
+      return riskHighlight === 'CRITICAL' || riskHighlight === 'HIGH' ? 'text-rose-400' : 'text-emerald-400';
+    }
+    if (trend === 'down') {
+      return 'text-emerald-400';
+    }
+    return 'text-slate-400';
   };
 
   return (
     <div
       id={id || `metric-${label.toLowerCase().replace(/\s+/g, '-')}`}
       onClick={onClick}
-      className={`relative p-3.5 rounded border transition-all duration-200 flex flex-col justify-between ${getHighlightStyle()} ${onClick ? 'cursor-pointer hover:scale-[1.01]' : ''} ${className}`}
+      className={`relative p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between group ${getHighlightStyle()} ${
+        onClick ? 'cursor-pointer hover:-translate-y-0.5 active:translate-y-0' : ''
+      } ${className}`}
     >
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold font-mono">
+      {/* Card Header */}
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold font-mono-tech">
           {label}
         </span>
-        {riskHighlight === 'CYAN' ? (
-          <span className="w-12 h-5 bg-cyan-400/10 rounded-full flex items-center justify-center text-cyan-400 text-[9px] font-bold font-mono">
-            ACTIVE
-          </span>
-        ) : riskHighlight === 'CRITICAL' ? (
-          <span className="text-[9px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded font-bold font-mono animate-pulse">
-            URGENT ⚠️
-          </span>
-        ) : riskHighlight === 'HIGH' ? (
-          <div className="w-1 h-5 bg-orange-500/50 rounded-full" />
-        ) : (
-          icon && <span className="text-slate-400 text-sm">{icon}</span>
+        {icon && (
+          <div className="w-7 h-7 rounded-lg bg-[#0E1D32] border border-[#1c2e47] flex items-center justify-center text-slate-300 group-hover:text-cyan-300 transition-colors">
+            {icon}
+          </div>
         )}
       </div>
 
-      <div className="flex items-baseline gap-1.5 my-0.5">
-        <span className={`text-2xl lg:text-3xl font-mono font-bold tracking-tight ${getValueColor()}`}>
+      {/* Main Metric Value */}
+      <div className="flex items-baseline gap-1.5 my-1">
+        <span className={`text-2xl sm:text-3xl font-mono-tech font-extrabold tracking-tight ${getValueColor()}`}>
           {value}
         </span>
         {unit && (
-          <span className="text-[10px] font-mono text-slate-400 uppercase">
+          <span className="text-xs font-mono-tech text-slate-400 font-medium">
             {unit}
           </span>
         )}
       </div>
 
+      {/* Card Footer: Sublabel + Trend */}
       {(sublabel || trendValue) && (
-        <div className="mt-1 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-          {sublabel && <span className="truncate text-slate-400">{sublabel}</span>}
+        <div className="mt-2 pt-2 border-t border-[#142844]/60 flex items-center justify-between text-[11px] font-mono-tech">
+          {sublabel && (
+            <span className="truncate text-slate-400 max-w-[70%]">
+              {sublabel}
+            </span>
+          )}
           {trendValue && (
-            <span className={`font-semibold flex items-center gap-0.5 ${
-              trend === 'up' ? 'text-red-400' : trend === 'down' ? 'text-emerald-400' : 'text-slate-400'
-            }`}>
-              {trend === 'up' && '↑'}
-              {trend === 'down' && '↓'}
-              {trend === 'stable' && '→'}
-              {trendValue}
+            <span className={`font-bold flex items-center gap-0.5 ${getTrendColor()}`}>
+              {trend === 'up' && <TrendingUp className="w-3 h-3" />}
+              {trend === 'down' && <TrendingDown className="w-3 h-3" />}
+              {trend === 'stable' && <Minus className="w-3 h-3" />}
+              <span>{trendValue}</span>
             </span>
           )}
         </div>

@@ -1,10 +1,12 @@
 import React from 'react';
 import { RiskLevel } from '../../types';
+import { ShieldAlert, AlertTriangle, CheckCircle2, Flame, Sparkles, Database } from 'lucide-react';
 
 interface RiskBadgeProps {
   level: RiskLevel;
   className?: string;
   showDot?: boolean;
+  showIcon?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -12,52 +14,58 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({
   level, 
   className = '', 
   showDot = true,
+  showIcon = false,
   size = 'md'
 }) => {
   const getBadgeStyle = (lvl: RiskLevel) => {
     switch (lvl) {
       case 'CRITICAL':
         return {
-          bg: 'bg-[#EF4444]/15 border-[#EF4444]/60 text-[#EF4444]',
-          dot: 'bg-[#EF4444] animate-ping'
+          bg: 'bg-rose-950/40 border-rose-500/50 text-rose-400 shadow-[0_0_12px_rgba(239,68,68,0.25)]',
+          dot: 'bg-rose-500',
+          icon: <Flame className="w-3.5 h-3.5 text-rose-400" />
         };
       case 'HIGH':
         return {
-          bg: 'bg-[#F97316]/15 border-[#F97316]/60 text-[#F97316]',
-          dot: 'bg-[#F97316]'
+          bg: 'bg-amber-950/40 border-orange-500/50 text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.2)]',
+          dot: 'bg-orange-500',
+          icon: <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
         };
       case 'MODERATE':
         return {
-          bg: 'bg-[#F59E0B]/15 border-[#F59E0B]/60 text-[#F59E0B]',
-          dot: 'bg-[#F59E0B]'
+          bg: 'bg-yellow-950/40 border-amber-500/50 text-amber-400',
+          dot: 'bg-amber-400',
+          icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
         };
       case 'LOW':
       default:
         return {
-          bg: 'bg-[#10B981]/15 border-[#10B981]/60 text-[#10B981]',
-          dot: 'bg-[#10B981]'
+          bg: 'bg-emerald-950/40 border-emerald-500/50 text-emerald-400',
+          dot: 'bg-emerald-400',
+          icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
         };
     }
   };
 
   const style = getBadgeStyle(level);
   const sizeClasses = {
-    sm: 'px-2 py-0.5 text-xs tracking-wider',
+    sm: 'px-2 py-0.5 text-[10px] tracking-wider font-semibold',
     md: 'px-2.5 py-1 text-xs font-semibold tracking-wider',
-    lg: 'px-3.5 py-1.5 text-sm font-bold tracking-widest'
+    lg: 'px-3.5 py-1.5 text-xs lg:text-sm font-bold tracking-widest'
   };
 
   return (
     <span 
       id={`risk-badge-${level.toLowerCase()}`}
-      className={`inline-flex items-center gap-1.5 rounded border ${style.bg} ${sizeClasses[size]} font-mono-tech uppercase shadow-sm ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md border font-mono-tech uppercase ${style.bg} ${sizeClasses[size]} ${className}`}
     >
-      {showDot && (
+      {showIcon && style.icon}
+      {showDot && !showIcon && (
         <span className="relative flex h-2 w-2">
           {level === 'CRITICAL' && (
-            <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${style.dot}`} />
+            <span className="absolute inline-flex h-full w-full rounded-full opacity-75 bg-rose-500 animate-ping" />
           )}
-          <span className={`relative inline-flex rounded-full h-2 w-2 ${level === 'CRITICAL' ? 'bg-[#EF4444]' : style.dot.split(' ')[0]}`} />
+          <span className={`relative inline-flex rounded-full h-2 w-2 ${style.dot}`} />
         </span>
       )}
       <span>{level}</span>
@@ -67,23 +75,41 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({
 
 export const TechBadge: React.FC<{ 
   label: string; 
-  variant?: 'cyan' | 'teal' | 'violet' | 'blue' | 'muted';
+  variant?: 'cyan' | 'teal' | 'violet' | 'blue' | 'amber' | 'muted';
+  icon?: React.ReactNode;
   className?: string;
-}> = ({ label, variant = 'cyan', className = '' }) => {
+  size?: 'sm' | 'md';
+}> = ({ label, variant = 'cyan', icon, className = '', size = 'sm' }) => {
   const styles = {
-    cyan: 'bg-[#00D4FF]/10 text-[#00D4FF] border-[#00D4FF]/30',
-    teal: 'bg-[#14E6C5]/10 text-[#14E6C5] border-[#14E6C5]/30',
-    violet: 'bg-[#7C5CFF]/15 text-[#7C5CFF] border-[#7C5CFF]/30',
-    blue: 'bg-[#5B8CFF]/10 text-[#5B8CFF] border-[#5B8CFF]/30',
-    muted: 'bg-slate-800/60 text-slate-400 border-slate-700'
+    cyan: 'bg-cyan-950/50 text-cyan-300 border-cyan-500/35 shadow-[0_0_10px_rgba(0,212,255,0.1)]',
+    teal: 'bg-teal-950/50 text-teal-300 border-teal-500/35',
+    violet: 'bg-violet-950/50 text-violet-300 border-violet-500/35 shadow-[0_0_10px_rgba(139,92,246,0.15)]',
+    blue: 'bg-blue-950/50 text-blue-300 border-blue-500/35',
+    amber: 'bg-amber-950/50 text-amber-300 border-amber-500/35',
+    muted: 'bg-slate-900/70 text-slate-400 border-slate-700/60'
   };
+
+  const sizeClass = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs';
 
   return (
     <span 
       id={`tech-badge-${label.toLowerCase().replace(/\s+/g, '-')}`}
-      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono-tech border uppercase tracking-wider ${styles[variant]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded border font-mono-tech uppercase font-semibold tracking-wider ${styles[variant]} ${sizeClass} ${className}`}
     >
-      {label}
+      {icon}
+      <span>{label}</span>
+    </span>
+  );
+};
+
+export const SimulationBadge: React.FC<{
+  label?: string;
+  className?: string;
+}> = ({ label = 'CALIBRATED SIMULATION', className = '' }) => {
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/40 border border-amber-500/40 text-amber-300 text-[10px] font-mono-tech font-bold uppercase tracking-wider ${className}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+      <span>{label}</span>
     </span>
   );
 };

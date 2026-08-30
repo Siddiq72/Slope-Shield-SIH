@@ -2,19 +2,24 @@
 
 @layer base {
   :root {
-    --bg-void: #050912;
+    --bg-void: #040810;
     --bg-deep: #07111F;
-    --bg-surface: #0B1726;
-    --bg-elevated: #101D2E;
-    --bg-elevated-hover: #142338;
-    --bg-panel: #0E1A2C;
-    --border-subtle: #1e293b;
-    --border-bright: #264366;
+    --bg-surface: #0B1728;
+    --bg-surface-glass: rgba(11, 23, 40, 0.85);
+    --bg-elevated: #101F34;
+    --bg-elevated-hover: #152945;
+    --bg-panel: #0D192C;
+    
+    --border-subtle: #18283E;
+    --border-default: #203550;
+    --border-bright: #2B496E;
+    --border-cyan: rgba(0, 212, 255, 0.35);
     
     --accent-cyan: #00D4FF;
     --accent-teal: #14E6C5;
-    --accent-violet: #7C5CFF;
-    --accent-blue: #5B8CFF;
+    --accent-violet: #8B5CF6;
+    --accent-blue: #3B82F6;
+    --accent-indigo: #6366F1;
     
     --risk-low: #10B981;
     --risk-moderate: #F59E0B;
@@ -24,23 +29,73 @@
 
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #050912;
+    background-color: #040810;
     color: #F1F5F9;
     overflow-x: hidden;
+    letter-spacing: -0.01em;
   }
 
-  .font-mono-tech {
+  .font-mono-tech, .tech-mono {
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 }
 
-/* Cybernetic Dotted Grid Pattern */
+/* Command Center Panel Glass Utilities */
+.panel-base {
+  background-color: #0B1728;
+  border: 1px solid #1c2e47;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.panel-interactive {
+  background-color: #0B1728;
+  border: 1px solid #1c2e47;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.panel-interactive:hover {
+  border-color: #2b496e;
+  background-color: #0e1d32;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 15px -3px rgba(0, 212, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.panel-glow-cyan {
+  border-color: rgba(0, 212, 255, 0.4) !important;
+  box-shadow: 0 4px 25px -2px rgba(0, 212, 255, 0.15), inset 0 1px 1px 0 rgba(0, 212, 255, 0.2) !important;
+}
+
+.panel-glow-critical {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 0 4px 30px -2px rgba(239, 68, 68, 0.25), inset 0 1px 1px 0 rgba(239, 68, 68, 0.3) !important;
+}
+
+.panel-glow-high {
+  border-color: rgba(249, 115, 22, 0.45) !important;
+  box-shadow: 0 4px 25px -2px rgba(249, 115, 22, 0.2), inset 0 1px 1px 0 rgba(249, 115, 22, 0.25) !important;
+}
+
+.panel-glow-violet {
+  border-color: rgba(139, 92, 246, 0.45) !important;
+  box-shadow: 0 4px 25px -2px rgba(139, 92, 246, 0.2), inset 0 1px 1px 0 rgba(139, 92, 246, 0.25) !important;
+}
+
+/* Background Cybernetic Tactical Grid */
 .bg-cyber-grid {
-  background-image: radial-gradient(circle at 50% 50%, #1e293b 1px, transparent 1px);
+  background-image: radial-gradient(circle at 50% 50%, rgba(32, 53, 80, 0.6) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* Custom scrollbars for command center */
+.bg-dot-matrix {
+  background-image: radial-gradient(rgba(0, 212, 255, 0.15) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Precision Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -51,47 +106,48 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 3px;
+  background: #1c2e47;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #264366;
+  background: #2b496e;
 }
 
 /* Leaflet Dark Customizations */
 .leaflet-container {
   background-color: #07111F !important;
   font-family: 'Inter', sans-serif !important;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
 }
 
 .leaflet-control-zoom {
-  border: 1px solid #1e293b !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+  border: 1px solid #1c2e47 !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important;
   overflow: hidden;
   border-radius: 8px !important;
 }
 
 .leaflet-control-zoom-in,
 .leaflet-control-zoom-out {
-  background-color: #101D2E !important;
+  background-color: #0E1D32 !important;
   color: #00D4FF !important;
-  border-bottom: 1px solid #1e293b !important;
+  border-bottom: 1px solid #1c2e47 !important;
+  transition: all 0.15s ease;
 }
 
 .leaflet-control-zoom-in:hover,
 .leaflet-control-zoom-out:hover {
-  background-color: #142338 !important;
+  background-color: #142844 !important;
   color: #FFFFFF !important;
 }
 
 .leaflet-popup-content-wrapper {
-  background: #0B1726 !important;
+  background: #0B1728 !important;
   color: #F1F5F9 !important;
-  border: 1px solid #264366 !important;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(0,212,255,0.15) !important;
-  border-radius: 10px !important;
+  border: 1px solid #2B496E !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.85), 0 0 20px rgba(0,212,255,0.15) !important;
+  border-radius: 12px !important;
   padding: 0 !important;
 }
 
@@ -101,14 +157,14 @@
 }
 
 .leaflet-popup-tip {
-  background: #0B1726 !important;
-  border: 1px solid #264366 !important;
+  background: #0B1728 !important;
+  border: 1px solid #2B496E !important;
 }
 
-/* Pulse animation for high risk zones */
+/* Keyframe Animations */
 @keyframes critical-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
   }
   50% {
     box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
@@ -116,15 +172,28 @@
 }
 
 .animate-critical-pulse {
-  animation: critical-pulse 2s infinite ease-in-out;
+  animation: critical-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes high-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(249, 115, 22, 0);
+  }
+}
+
+.animate-high-pulse {
+  animation: high-pulse 2.2s infinite cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 @keyframes cyan-glow {
   0%, 100% {
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
   }
   50% {
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+    box-shadow: 0 0 24px rgba(0, 212, 255, 0.5);
   }
 }
 
@@ -132,3 +201,50 @@
   animation: cyan-glow 3s infinite ease-in-out;
 }
 
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 4s linear infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.8s infinite;
+}
+
+/* Custom Tactical Tooltip styling */
+.tech-tooltip {
+  position: relative;
+}
+
+.tech-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  background: #0E1D32;
+  border: 1px solid #2B496E;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #E2E8F0;
+  white-space: nowrap;
+  z-index: 50;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}

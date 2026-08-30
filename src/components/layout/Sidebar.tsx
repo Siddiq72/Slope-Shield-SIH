@@ -8,10 +8,9 @@ import {
   BellRing, 
   ShieldAlert, 
   Settings,
+  Mountain,
   Activity,
-  Layers,
-  Sparkles,
-  Mountain
+  Layers
 } from 'lucide-react';
 import { useDemo } from '../../context/DemoContext';
 import { NavigationTab } from '../../types';
@@ -62,7 +61,7 @@ export const Sidebar: React.FC = () => {
         },
         {
           id: 'reports',
-          label: 'Field Reports',
+          label: 'Field Recon Reports',
           icon: <FileText className="w-4 h-4" />,
           badge: pendingReportsCount,
           badgeVariant: 'cyan'
@@ -91,7 +90,7 @@ export const Sidebar: React.FC = () => {
       items: [
         {
           id: 'settings',
-          label: 'Model & Thresholds',
+          label: 'System & Architecture',
           icon: <Settings className="w-4 h-4" />
         }
       ]
@@ -99,35 +98,35 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 flex-shrink-0 bg-[#07111F] border-r border-[#182B42] flex flex-col justify-between h-screen sticky top-0 z-30 select-none">
+    <aside className="w-64 flex-shrink-0 bg-[#07111F] border-r border-[#18283E] flex flex-col justify-between h-screen sticky top-0 z-30 select-none shadow-2xl">
       {/* Brand Header */}
       <div>
-        <div className="p-5 border-b border-[#182B42] bg-[#07111F]">
+        <div className="p-4 lg:p-5 border-b border-[#18283E] bg-[#07111F]">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 bg-[#00D4FF] rounded-md shadow-[0_0_10px_rgba(0,212,255,0.4)] flex items-center justify-center text-[#050912] font-extrabold text-[11px]">
-              ▲
+            <div className="w-7 h-7 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg shadow-[0_0_15px_rgba(0,212,255,0.4)] flex items-center justify-center text-[#040810] font-black text-xs">
+              <Mountain className="w-4 h-4 text-[#040810]" />
             </div>
             <div>
-              <span className="font-bold text-white tracking-wider text-base font-sans">
-                SLOPE SHIELD
+              <span className="font-extrabold text-white tracking-wide text-base font-sans flex items-center gap-1">
+                SLOPE <span className="text-cyan-400">SHIELD</span>
               </span>
             </div>
           </div>
-          <p className="text-[10px] text-[#00D4FF] font-mono-tech tracking-wider font-semibold mt-1">
-            AI LANDSLIDE WARNING SYSTEM
+          <p className="text-[10px] text-slate-400 font-mono-tech tracking-wider font-semibold mt-1">
+            AI EARLY WARNING & RISK GRID
           </p>
 
-          <div className="mt-3 flex items-center justify-between px-2.5 py-1 rounded-lg bg-[#0E1A2C] border border-[#182B42] text-[10px] font-mono-tech text-slate-400">
-            <span>SIH PS 26001</span>
-            <span className="text-[#14E6C5] font-semibold">TEAM NEXORA</span>
+          <div className="mt-3 flex items-center justify-between px-2.5 py-1 rounded bg-[#0B1728] border border-[#18283E] text-[10px] font-mono-tech">
+            <span className="text-slate-400">SIH PS 26001</span>
+            <span className="text-teal-400 font-bold">TEAM NEXORA</span>
           </div>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="py-4 space-y-4 overflow-y-auto max-h-[calc(100vh-210px)]">
+        <nav className="py-3 px-2 space-y-4 overflow-y-auto max-h-[calc(100vh-215px)]">
           {navSections.map((section) => (
             <div key={section.title} className="space-y-1">
-              <div className="px-4 mb-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold font-mono-tech">
+              <div className="px-3 mb-1.5 text-[10px] uppercase tracking-widest text-slate-400 font-bold font-mono-tech">
                 {section.title}
               </div>
               <div className="space-y-0.5">
@@ -137,25 +136,25 @@ export const Sidebar: React.FC = () => {
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
-                      className={`w-full flex items-center justify-between px-4 py-2 text-xs transition-colors cursor-pointer text-left ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all cursor-pointer text-left group ${
                         isActive
-                          ? 'bg-[#101D2E] text-[#00D4FF] border-r-2 border-[#00D4FF] font-medium'
-                          : 'text-slate-400 hover:bg-[#101D2E]/60 hover:text-slate-200'
+                          ? 'bg-[#0E1D32] text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(0,212,255,0.1)] font-semibold'
+                          : 'text-slate-400 hover:bg-[#0E1D32]/60 hover:text-slate-200 border border-transparent'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className={isActive ? 'text-[#00D4FF]' : 'text-slate-400'}>
+                      <div className="flex items-center gap-2.5">
+                        <span className={`transition-colors ${isActive ? 'text-cyan-400' : 'text-slate-400 group-hover:text-slate-300'}`}>
                           {item.icon}
                         </span>
-                        <span className="text-sm font-medium font-sans">{item.label}</span>
+                        <span className="text-xs font-medium font-sans tracking-tight">{item.label}</span>
                       </div>
 
                       {item.badge !== undefined && item.badge > 0 && (
                         <span
-                          className={`ml-auto font-mono-tech text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                          className={`ml-auto font-mono-tech text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm ${
                             item.badgeVariant === 'critical'
-                              ? 'bg-[#EF4444] text-white animate-pulse'
-                              : 'bg-[#00D4FF]/20 text-[#00D4FF] border border-[#00D4FF]/40'
+                              ? 'bg-rose-600 text-white animate-pulse'
+                              : 'bg-cyan-950 text-cyan-300 border border-cyan-500/40'
                           }`}
                         >
                           {item.badge}
@@ -171,13 +170,16 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* System Status Footer */}
-      <div className="p-4 border-t border-[#182B42] bg-[#050912]">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse"></div>
-          <span className="text-[10px] font-mono-tech text-[#10B981] tracking-tighter font-semibold">SYSTEM OPERATIONAL</span>
+      <div className="p-3.5 border-t border-[#18283E] bg-[#050912]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></div>
+            <span className="text-[10px] font-mono-tech text-emerald-400 tracking-wider font-bold">GRID ONLINE</span>
+          </div>
+          <span className="text-[9px] font-mono-tech text-slate-400">NER NODE 26°N</span>
         </div>
-        <div className="text-[9px] text-slate-500 mt-1 font-mono-tech uppercase">
-          Northeast India Node v2.4.1
+        <div className="text-[9px] text-slate-400 mt-1 font-mono-tech">
+          Calibrated Simulation • Dual Mode
         </div>
       </div>
     </aside>

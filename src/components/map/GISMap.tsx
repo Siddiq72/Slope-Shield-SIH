@@ -2,21 +2,22 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { 
   Layers, 
-  Maximize2, 
-  Minimize2, 
   Compass, 
   Eye, 
   Radio, 
   CloudRain, 
   Activity, 
   Route,
-  Info,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Info,
+  Maximize2,
+  Minimize2,
+  Satellite
 } from 'lucide-react';
 import { RiskZone, SensorReading, RoadSegment } from '../../types';
 import { useDemo } from '../../context/DemoContext';
-import { RiskBadge } from '../ui/Badge';
+import { RiskBadge, TechBadge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 
 interface GISMapProps {
@@ -42,12 +43,12 @@ export const GISMap: React.FC<GISMapProps> = ({
 
   // Layer toggles
   const [layersOpen, setLayersOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   const [showRiskZones, setShowRiskZones] = useState(true);
   const [showRainfallLayer, setShowRainfallLayer] = useState(true);
   const [showRoadCorridors, setShowRoadCorridors] = useState(true);
   const [showSensorNodes, setShowSensorNodes] = useState(true);
   const [showInSAROverlay, setShowInSAROverlay] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [inspectedZone, setInspectedZone] = useState<RiskZone | null>(null);
 
   // Initialize Map
@@ -154,7 +155,7 @@ export const GISMap: React.FC<GISMapProps> = ({
 
     roadPolylines.forEach((road) => {
       const color = road.status === 'BLOCKED' ? '#EF4444' : road.status === 'AT RISK' ? '#F97316' : '#10B981';
-      const weight = road.status === 'BLOCKED' ? 5 : 3.5;
+      const weight = road.status === 'BLOCKED' ? 4.5 : 3.5;
       const dash = road.status === 'BLOCKED' ? '6, 6' : undefined;
 
       const polyline = L.polyline(road.coords, {
@@ -167,8 +168,9 @@ export const GISMap: React.FC<GISMapProps> = ({
       });
 
       polyline.bindTooltip(
-        `<div class="font-mono-tech text-[10px] bg-[#0E1A2C] text-slate-100 px-2 py-1 rounded border border-[#264366]">
-          <strong>${road.name}</strong><br/><span style="color: ${color}">${road.status}</span>
+        `<div class="font-mono-tech text-[10px] bg-[#0B1728] text-slate-100 px-2.5 py-1.5 rounded-lg border border-[#2B496E] shadow-xl">
+          <div class="font-bold text-slate-200">${road.name}</div>
+          <div class="mt-0.5 font-semibold" style="color: ${color}">STATUS: ${road.status}</div>
         </div>`,
         { sticky: true, opacity: 0.95 }
       );
@@ -186,10 +188,10 @@ export const GISMap: React.FC<GISMapProps> = ({
 
     // Simulated Monsoonal Precipitation heat pockets over Northeast India
     const rainfallCenters: Array<{ lat: number; lng: number; radiusKm: number; intensity: number }> = [
-      { lat: 23.74, lng: 92.72, radiusKm: 35, intensity: 0.8 }, // Aizawl
-      { lat: 25.11, lng: 92.36, radiusKm: 45, intensity: 0.9 }, // Sonapur Meghalaya
-      { lat: 27.34, lng: 88.61, radiusKm: 30, intensity: 0.65 }, // Gangtok
-      { lat: 25.12, lng: 92.99, radiusKm: 38, intensity: 0.85 } // Dima Hasao
+      { lat: 23.74, lng: 92.72, radiusKm: 38, intensity: 0.85 }, // Aizawl
+      { lat: 25.11, lng: 92.36, radiusKm: 45, intensity: 0.92 }, // Sonapur Meghalaya
+      { lat: 27.34, lng: 88.61, radiusKm: 32, intensity: 0.65 }, // Gangtok
+      { lat: 25.12, lng: 92.99, radiusKm: 40, intensity: 0.88 }  // Dima Hasao
     ];
 
     rainfallCenters.forEach((cell) => {
@@ -198,8 +200,8 @@ export const GISMap: React.FC<GISMapProps> = ({
         color: '#00D4FF',
         fillColor: '#00D4FF',
         fillOpacity: 0.12 * cell.intensity,
-        weight: 1,
-        dashArray: '3, 6'
+        weight: 1.5,
+        dashArray: '4, 6'
       });
       radarOverlayRef.current?.addLayer(circle);
     });
@@ -219,16 +221,16 @@ export const GISMap: React.FC<GISMapProps> = ({
 
       const color = isCritical ? '#EF4444' : isHigh ? '#F97316' : zone.riskLevel === 'MODERATE' ? '#F59E0B' : '#10B981';
 
-      // Custom HTML Marker Icon matching the Master Plan
+      // Custom HTML Marker Icon
       const iconHtml = `
         <div class="relative cursor-pointer group transform transition-transform duration-200 hover:scale-110">
-          ${isCritical ? `<div class="absolute -inset-2 rounded-full bg-[#EF4444]/30 animate-ping"></div>` : ''}
-          ${isSelected ? `<div class="absolute -inset-3 rounded-full border-2 border-[#00D4FF] animate-pulse"></div>` : ''}
-          <div class="relative px-2 py-1 rounded-md border flex items-center gap-1.5 shadow-xl font-mono-tech"
-               style="background: #0B1726; border-color: ${color}; color: ${color};">
-            <span class="text-[11px] font-extrabold">${zone.code}</span>
-            <span class="w-1.5 h-1.5 rounded-full" style="background: ${color}"></span>
-            <span class="text-[10px] font-bold text-slate-100">${zone.riskScore}%</span>
+          ${isCritical ? `<div class="absolute -inset-2 rounded-full bg-rose-500/40 animate-ping"></div>` : ''}
+          ${isSelected ? `<div class="absolute -inset-2.5 rounded-lg border-2 border-cyan-400 animate-pulse shadow-[0_0_12px_rgba(0,212,255,0.6)]"></div>` : ''}
+          <div class="relative px-2 py-1 rounded-md border flex items-center gap-1.5 shadow-2xl font-mono-tech"
+               style="background: #0B1728; border-color: ${color}; color: ${color};">
+            <span class="text-[11px] font-black">${zone.code}</span>
+            <span class="w-2 h-2 rounded-full" style="background: ${color}"></span>
+            <span class="text-[10px] font-extrabold text-slate-100">${zone.riskScore}%</span>
           </div>
         </div>
       `;
@@ -236,8 +238,8 @@ export const GISMap: React.FC<GISMapProps> = ({
       const customIcon = L.divIcon({
         html: iconHtml,
         className: 'custom-gis-marker',
-        iconSize: [64, 28],
-        iconAnchor: [32, 14]
+        iconSize: [68, 30],
+        iconAnchor: [34, 15]
       });
 
       const marker = L.marker(zone.coordinates, { icon: customIcon });
@@ -251,13 +253,12 @@ export const GISMap: React.FC<GISMapProps> = ({
 
       markersGroupRef.current?.addLayer(marker);
 
-      // Also add risk buffer circle
-      const bufferColor = color;
+      // Risk buffer circle
       const buffer = L.circle(zone.coordinates, {
         radius: isCritical ? 6500 : isHigh ? 4500 : 2500,
-        color: bufferColor,
-        fillColor: bufferColor,
-        fillOpacity: isCritical ? 0.18 : 0.08,
+        color,
+        fillColor: color,
+        fillOpacity: isCritical ? 0.16 : 0.08,
         weight: 1.5
       });
       markersGroupRef.current?.addLayer(buffer);
@@ -269,17 +270,16 @@ export const GISMap: React.FC<GISMapProps> = ({
         const matchingZone = zones.find((z) => z.code === s.zoneCode);
         if (!matchingZone) return;
 
-        // Offset slightly from center
         const sensorCoords: [number, number] = [
-          matchingZone.coordinates[0] + 0.015,
-          matchingZone.coordinates[1] + 0.015
+          matchingZone.coordinates[0] + 0.018,
+          matchingZone.coordinates[1] + 0.018
         ];
 
         const sensorColor = s.status === 'ONLINE' ? '#10B981' : s.status === 'WARNING' ? '#F59E0B' : '#EF4444';
 
         const sensorIcon = L.divIcon({
           html: `
-            <div class="flex items-center justify-center w-5 h-5 rounded-full bg-[#101D2E] border border-[${sensorColor}] text-[${sensorColor}] shadow-md" style="border-color: ${sensorColor}; color: ${sensorColor}">
+            <div class="flex items-center justify-center w-5 h-5 rounded-full bg-[#0E1D32] border shadow-md" style="border-color: ${sensorColor}; color: ${sensorColor}">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
             </div>
           `,
@@ -290,10 +290,10 @@ export const GISMap: React.FC<GISMapProps> = ({
 
         const sensorMarker = L.marker(sensorCoords, { icon: sensorIcon });
         sensorMarker.bindTooltip(
-          `<div class="font-mono-tech text-[10px] bg-[#0E1A2C] text-slate-100 p-2 rounded border border-[#264366]">
-            <div class="font-bold text-[#00D4FF]">${s.nodeId} — ${s.nodeName}</div>
+          `<div class="font-mono-tech text-[10px] bg-[#0B1728] text-slate-100 p-2.5 rounded-lg border border-[#2B496E] shadow-xl">
+            <div class="font-bold text-cyan-400">${s.nodeId} — ${s.nodeName}</div>
             <div class="text-slate-400">${s.location}</div>
-            <div class="mt-1 flex gap-2">
+            <div class="mt-1 flex gap-2 pt-1 border-t border-[#18283E]">
               <span>Moisture: <strong>${s.soilMoisturePct}%</strong></span>
               <span>Tilt: <strong>${s.slopeTiltDeg}°</strong></span>
             </div>
@@ -328,107 +328,162 @@ export const GISMap: React.FC<GISMapProps> = ({
   };
 
   return (
-    <div className={`relative w-full ${heightClass} bg-[#07111F] rounded-2xl border border-[#182B42] overflow-hidden shadow-2xl`}>
+    <div className={`relative w-full ${heightClass} bg-[#07111F] rounded-xl border border-[#18283E] overflow-hidden shadow-2xl`}>
       {/* Map Container */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
       {/* Top Left Header Badge: GIS Command Overlay */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-        <div className="px-3 py-1.5 rounded-lg bg-[#0B1726]/90 backdrop-blur-md border border-[#264366] text-xs font-mono-tech flex items-center gap-2 shadow-lg">
+      <div className="absolute top-3.5 left-3.5 z-10 flex items-center gap-2">
+        <div className="px-3 py-1.5 rounded-lg bg-[#0B1728]/95 backdrop-blur-md border border-[#203550] text-xs font-mono-tech flex items-center gap-2 shadow-xl">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D4FF] opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00D4FF]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
           </span>
           <span className="font-bold text-slate-100">GIS MULTI-SOURCE RADAR</span>
           <span className="text-slate-400">|</span>
-          <span className="text-[#14E6C5] font-semibold">NER SECTOR</span>
+          <span className="text-teal-300 font-bold">NER THEATER</span>
         </div>
       </div>
 
       {/* Top Right Controls & Layer Toggle */}
-      <div className="absolute top-4 right-14 z-10 flex items-center gap-2">
+      <div className="absolute top-3.5 right-14 z-10 flex items-center gap-2">
         {/* Layer selector toggle button */}
         <div className="relative">
           <button
-            onClick={() => setLayersOpen(!layersOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0B1726]/90 backdrop-blur-md hover:bg-[#101D2E] border border-[#264366] text-xs font-mono-tech text-slate-200 transition-colors shadow-lg"
+            onClick={() => {
+              setLayersOpen(!layersOpen);
+              setLegendOpen(false);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0B1728]/95 backdrop-blur-md hover:bg-[#0E1D32] border border-[#203550] text-xs font-mono-tech text-slate-200 transition-colors shadow-xl cursor-pointer"
           >
-            <Layers className="w-4 h-4 text-[#00D4FF]" />
-            <span className="hidden sm:inline">Layers</span>
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <span className="hidden sm:inline font-semibold">Layers</span>
           </button>
 
           {/* Layers Dropdown Menu */}
           {layersOpen && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-[#0B1726] border border-[#264366] rounded-xl shadow-2xl p-3 z-50 animate-fade-in text-xs font-sans">
-              <div className="font-mono-tech text-[10px] text-slate-400 uppercase tracking-wider border-b border-[#182B42] pb-1.5 mb-2 font-bold">
+            <div className="absolute right-0 top-full mt-2 w-64 bg-[#0B1728] border border-[#2B496E] rounded-xl shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 text-xs font-sans">
+              <div className="font-mono-tech text-[10px] text-slate-400 uppercase tracking-wider border-b border-[#18283E] pb-1.5 mb-2 font-bold">
                 GIS Geospatial Layers
               </div>
 
               <div className="space-y-2">
                 <label className="flex items-center justify-between cursor-pointer text-slate-200 hover:text-white">
                   <div className="flex items-center gap-2">
-                    <Activity className="w-3.5 h-3.5 text-[#EF4444]" />
-                    <span>Risk Zones & Hazard Buffer</span>
+                    <Activity className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Risk Zones & Buffer</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={showRiskZones}
                     onChange={(e) => setShowRiskZones(e.target.checked)}
-                    className="accent-[#00D4FF] rounded"
+                    className="accent-cyan-400 rounded cursor-pointer"
                   />
                 </label>
 
                 <label className="flex items-center justify-between cursor-pointer text-slate-200 hover:text-white">
                   <div className="flex items-center gap-2">
-                    <CloudRain className="w-3.5 h-3.5 text-[#00D4FF]" />
-                    <span>Rainfall Radar Intensity</span>
+                    <CloudRain className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Rainfall Radar Pockets</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={showRainfallLayer}
                     onChange={(e) => setShowRainfallLayer(e.target.checked)}
-                    className="accent-[#00D4FF] rounded"
+                    className="accent-cyan-400 rounded cursor-pointer"
                   />
                 </label>
 
                 <label className="flex items-center justify-between cursor-pointer text-slate-200 hover:text-white">
                   <div className="flex items-center gap-2">
-                    <Route className="w-3.5 h-3.5 text-[#F59E0B]" />
-                    <span>Road Corridors & Blockages</span>
+                    <Route className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Road Corridors & Blocks</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={showRoadCorridors}
                     onChange={(e) => setShowRoadCorridors(e.target.checked)}
-                    className="accent-[#00D4FF] rounded"
+                    className="accent-cyan-400 rounded cursor-pointer"
                   />
                 </label>
 
                 <label className="flex items-center justify-between cursor-pointer text-slate-200 hover:text-white">
                   <div className="flex items-center gap-2">
-                    <Radio className="w-3.5 h-3.5 text-[#10B981]" />
-                    <span>IoT Sensor Telemetry Nodes</span>
+                    <Radio className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>IoT Ground Sensor Nodes</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={showSensorNodes}
                     onChange={(e) => setShowSensorNodes(e.target.checked)}
-                    className="accent-[#00D4FF] rounded"
+                    className="accent-cyan-400 rounded cursor-pointer"
                   />
                 </label>
 
                 <label className="flex items-center justify-between cursor-pointer text-slate-200 hover:text-white">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#7C5CFF]" />
+                    <Satellite className="w-3.5 h-3.5 text-violet-400" />
                     <span>Sentinel-1 InSAR Deformation</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={showInSAROverlay}
                     onChange={(e) => setShowInSAROverlay(e.target.checked)}
-                    className="accent-[#7C5CFF] rounded"
+                    className="accent-violet-400 rounded cursor-pointer"
                   />
                 </label>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Legend toggle */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              setLegendOpen(!legendOpen);
+              setLayersOpen(false);
+            }}
+            className="p-1.5 rounded-lg bg-[#0B1728]/95 backdrop-blur-md hover:bg-[#0E1D32] border border-[#203550] text-slate-300 hover:text-white transition-colors shadow-xl cursor-pointer"
+            title="Toggle Map Legend"
+          >
+            <Info className="w-4 h-4 text-cyan-400" />
+          </button>
+
+          {legendOpen && (
+            <div className="absolute right-0 top-full mt-2 w-56 bg-[#0B1728] border border-[#2B496E] rounded-xl shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 text-xs font-mono-tech">
+              <div className="text-[10px] text-slate-400 uppercase tracking-wider border-b border-[#18283E] pb-1.5 mb-2 font-bold">
+                Map Severity Legend
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_#ef4444]"></span>
+                    <span className="text-rose-400 font-bold">CRITICAL</span>
+                  </div>
+                  <span className="text-slate-400">Score &gt; 85</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_6px_#f97316]"></span>
+                    <span className="text-orange-400 font-bold">HIGH</span>
+                  </div>
+                  <span className="text-slate-400">Score 70-84</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                    <span className="text-amber-400 font-bold">MODERATE</span>
+                  </div>
+                  <span className="text-slate-400">Score 45-69</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    <span className="text-emerald-400 font-bold">LOW</span>
+                  </div>
+                  <span className="text-slate-400">Score &lt; 45</span>
+                </div>
               </div>
             </div>
           )}
@@ -438,20 +493,20 @@ export const GISMap: React.FC<GISMapProps> = ({
         <button
           onClick={handleResetView}
           title="Reset Regional View"
-          className="p-1.5 rounded-lg bg-[#0B1726]/90 backdrop-blur-md hover:bg-[#101D2E] border border-[#264366] text-slate-300 hover:text-white transition-colors shadow-lg"
+          className="p-1.5 rounded-lg bg-[#0B1728]/95 backdrop-blur-md hover:bg-[#0E1D32] border border-[#203550] text-slate-300 hover:text-white transition-colors shadow-xl cursor-pointer"
         >
           <Compass className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Floating Interactive Zone Inspector (Bottom Right or Bottom Left on Desktop) */}
+      {/* Floating Interactive Zone Inspector */}
       {inspectedZone && (
-        <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-sm z-10 bg-[#0B1726]/95 backdrop-blur-lg border border-[#264366] rounded-xl p-4 shadow-2xl animate-fade-in">
+        <div className="absolute bottom-3.5 left-3.5 right-3.5 sm:right-auto sm:max-w-sm z-10 bg-[#0B1728]/95 backdrop-blur-lg border border-[#2B496E] rounded-xl p-4 shadow-2xl animate-in fade-in zoom-in-95">
           {/* Header */}
-          <div className="flex items-start justify-between gap-2 mb-2 pb-2 border-b border-[#182B42]">
+          <div className="flex items-start justify-between gap-2 mb-2 pb-2 border-b border-[#18283E]">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-extrabold font-mono-tech px-2 py-0.5 rounded bg-[#101D2E] text-[#00D4FF] border border-[#264366]">
+                <span className="text-xs font-bold font-mono-tech px-2 py-0.5 rounded bg-[#0E1D32] text-cyan-300 border border-[#203550]">
                   ZONE {inspectedZone.code}
                 </span>
                 <RiskBadge level={inspectedZone.riskLevel} size="sm" />
@@ -465,77 +520,66 @@ export const GISMap: React.FC<GISMapProps> = ({
             </div>
 
             <div className="text-right">
-              <div className="text-2xl font-extrabold font-mono-tech text-[#EF4444] leading-none">
+              <div className="text-2xl font-extrabold font-mono-tech text-rose-400 leading-none">
                 {inspectedZone.riskScore}
                 <span className="text-xs font-normal text-slate-400">/100</span>
               </div>
-              <span className="text-[9px] font-mono-tech text-slate-400 uppercase">
+              <span className="text-[9px] font-mono-tech text-slate-400 uppercase font-semibold">
                 HYPERLOCAL RISK
               </span>
             </div>
           </div>
 
-          {/* Contributors Progress Grid matching Section 10 of Master Plan */}
+          {/* Contributors Progress Grid */}
           <div className="space-y-1.5 text-xs font-sans mb-3">
             <div className="flex items-center justify-between font-mono-tech text-[11px]">
-              <span className="text-slate-400">Rainfall</span>
+              <span className="text-slate-400">Rainfall Precipitation</span>
               <span className="font-bold text-slate-100">{inspectedZone.rainfallRateMmHr > 35 ? '82%' : '45%'}</span>
             </div>
-            <div className="h-1.5 w-full bg-[#101D2E] rounded-full overflow-hidden">
+            <div className="h-1.5 w-full bg-[#0E1D32] rounded-full overflow-hidden">
               <div 
-                className="h-full bg-[#00D4FF]" 
+                className="h-full bg-cyan-400 shadow-[0_0_6px_#00D4FF]" 
                 style={{ width: `${inspectedZone.rainfallRateMmHr > 35 ? 82 : 45}%` }} 
               />
             </div>
 
-            <div className="flex items-center justify-between font-mono-tech text-[11px] pt-1">
-              <span className="text-slate-400">Soil Moisture</span>
+            <div className="flex items-center justify-between font-mono-tech text-[11px] pt-0.5">
+              <span className="text-slate-400">Soil Moisture Saturation</span>
               <span className="font-bold text-slate-100">{inspectedZone.soilMoisturePct}%</span>
             </div>
-            <div className="h-1.5 w-full bg-[#101D2E] rounded-full overflow-hidden">
+            <div className="h-1.5 w-full bg-[#0E1D32] rounded-full overflow-hidden">
               <div 
-                className="h-full bg-[#14E6C5]" 
+                className="h-full bg-teal-400 shadow-[0_0_6px_#14E6C5]" 
                 style={{ width: `${inspectedZone.soilMoisturePct}%` }} 
               />
             </div>
 
-            <div className="flex items-center justify-between font-mono-tech text-[11px] pt-1">
+            <div className="flex items-center justify-between font-mono-tech text-[11px] pt-0.5">
               <span className="text-slate-400">Slope Tilt Instability</span>
               <span className="font-bold text-slate-100">{inspectedZone.slopeInstabilityPct}%</span>
             </div>
-            <div className="h-1.5 w-full bg-[#101D2E] rounded-full overflow-hidden">
+            <div className="h-1.5 w-full bg-[#0E1D32] rounded-full overflow-hidden">
               <div 
-                className="h-full bg-[#EF4444]" 
+                className="h-full bg-rose-500 shadow-[0_0_6px_#EF4444]" 
                 style={{ width: `${inspectedZone.slopeInstabilityPct}%` }} 
-              />
-            </div>
-
-            <div className="flex items-center justify-between font-mono-tech text-[11px] pt-1">
-              <span className="text-slate-400">Historical Locus Vulnerability</span>
-              <span className="font-bold text-slate-100">{inspectedZone.historicalVulnerabilityPct}%</span>
-            </div>
-            <div className="h-1.5 w-full bg-[#101D2E] rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-[#F59E0B]" 
-                style={{ width: `${inspectedZone.historicalVulnerabilityPct}%` }} 
               />
             </div>
           </div>
 
           {/* Road & 6H Forecast Row */}
-          <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[#101D2E] border border-[#182B42] text-[11px] font-mono-tech mb-3">
+          <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[#0E1D32] border border-[#18283E] text-[11px] font-mono-tech mb-3">
             <div>
               <span className="text-slate-400 uppercase text-[9px] block">ROAD NETWORK</span>
               <span className={`font-bold ${
-                inspectedZone.roadStatus === 'BLOCKED' ? 'text-[#EF4444]' : inspectedZone.roadStatus === 'AT RISK' ? 'text-[#F97316]' : 'text-[#10B981]'
+                inspectedZone.roadStatus === 'BLOCKED' ? 'text-rose-400' : inspectedZone.roadStatus === 'AT RISK' ? 'text-orange-400' : 'text-emerald-400'
               }`}>
                 {inspectedZone.roadStatus}
               </span>
             </div>
 
             <div className="text-right">
-              <span className="text-slate-400 uppercase text-[9px] block">NEXT 6 HOURS</span>
-              <span className="font-bold text-[#EF4444]">
+              <span className="text-slate-400 uppercase text-[9px] block">6H FORECAST</span>
+              <span className="font-bold text-rose-400">
                 {inspectedZone.forecast6h.from} → {inspectedZone.forecast6h.to}
               </span>
             </div>
@@ -554,7 +598,7 @@ export const GISMap: React.FC<GISMapProps> = ({
               className="w-full text-xs font-mono-tech"
               icon={<ChevronRight className="w-3.5 h-3.5" />}
             >
-              VIEW AI RISK ANALYSIS →
+              EXPLAIN AI RISK →
             </Button>
             <Button
               onClick={() => handleLocateZone(inspectedZone.coordinates)}
@@ -563,7 +607,7 @@ export const GISMap: React.FC<GISMapProps> = ({
               className="text-xs px-2.5"
               title="Fly to coordinate"
             >
-              <Compass className="w-3.5 h-3.5 text-[#00D4FF]" />
+              <Compass className="w-3.5 h-3.5 text-cyan-400" />
             </Button>
           </div>
         </div>

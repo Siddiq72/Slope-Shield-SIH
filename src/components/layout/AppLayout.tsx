@@ -41,16 +41,16 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#050912] text-slate-100 font-sans selection:bg-[#00D4FF]/30 selection:text-white">
+    <div className="flex min-h-screen bg-[#040810] text-slate-100 font-sans selection:bg-[#00D4FF]/30 selection:text-cyan-300">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-cyber-grid bg-[#040810]/95">
         <Header onOpenReportModal={() => setReportModalOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="max-w-[1600px] mx-auto">
+        <main className="flex-1 overflow-y-auto px-3 sm:px-5 lg:px-7 py-5">
+          <div className="max-w-[1680px] mx-auto">
             <ErrorBoundary fallbackTitle="Module View Recovered">
               {renderActivePage()}
             </ErrorBoundary>

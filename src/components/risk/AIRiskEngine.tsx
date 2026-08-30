@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, Sparkles, ArrowRight, ShieldAlert, Zap, AlertTriangle } from 'lucide-react';
+import { Cpu, Sparkles, ChevronRight, ShieldAlert, Zap, AlertTriangle } from 'lucide-react';
 import { RiskZone } from '../../types';
 import { RiskGauge } from '../ui/RiskGauge';
 import { ProgressBar } from '../ui/ProgressBar';
@@ -15,28 +15,29 @@ export const AIRiskEngine: React.FC<AIRiskEngineProps> = ({ zone, onOpenAnalysis
   const { setActiveTab } = useDemo();
 
   return (
-    <div className="bg-[#0E1A2C] border border-[#182B42] rounded-2xl p-5 shadow-xl flex flex-col justify-between h-full">
+    <div className="bg-[#0B1728] border border-[#1c2e47] rounded-xl p-5 shadow-xl flex flex-col justify-between h-full">
       {/* Header */}
       <div>
-        <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#182B42]">
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#18283E]">
           <div className="flex items-center gap-2">
-            <h3 className="text-xs font-bold text-[#00D4FF] uppercase tracking-widest font-mono-tech">
+            <Cpu className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-xs font-bold text-cyan-300 uppercase tracking-widest font-mono-tech">
               AI RISK ENGINE
             </h3>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[#7C5CFF] font-mono-tech px-2 py-0.5 bg-[#7C5CFF]/10 rounded border border-[#7C5CFF]/20">
+            <span className="text-[10px] text-violet-300 font-mono-tech px-2 py-0.5 bg-violet-950/50 rounded border border-violet-500/30">
               DYNAMIC SCORE
             </span>
-            <span className="text-xs font-bold font-mono-tech text-[#00D4FF]">
+            <span className="text-xs font-bold font-mono-tech text-cyan-300">
               ZONE {zone.code}
             </span>
           </div>
         </div>
 
         {/* Gauge & Main Score Readout */}
-        <div className="my-3 flex flex-col sm:flex-row items-center justify-around gap-4 bg-[#07111F]/80 p-3.5 rounded-xl border border-[#182B42]">
+        <div className="my-3 flex flex-col sm:flex-row items-center justify-around gap-4 bg-[#07111F]/90 p-3.5 rounded-xl border border-[#18283E]">
           <RiskGauge score={zone.riskScore} level={zone.riskLevel} size="md" showLabels={false} />
 
           <div className="space-y-1 text-center sm:text-left">
@@ -44,7 +45,7 @@ export const AIRiskEngine: React.FC<AIRiskEngineProps> = ({ zone, onOpenAnalysis
               AI CLASSIFICATION
             </span>
             <div className="text-xl font-bold font-mono-tech text-white flex items-center gap-2">
-              <span className={zone.riskLevel === 'CRITICAL' ? 'text-[#EF4444]' : zone.riskLevel === 'HIGH' ? 'text-[#F97316]' : 'text-[#10B981]'}>
+              <span className={zone.riskLevel === 'CRITICAL' ? 'text-rose-400' : zone.riskLevel === 'HIGH' ? 'text-orange-400' : 'text-emerald-400'}>
                 {zone.riskLevel} SEVERITY
               </span>
             </div>
@@ -98,8 +99,8 @@ export const AIRiskEngine: React.FC<AIRiskEngineProps> = ({ zone, onOpenAnalysis
 
           <ProgressBar
             label="InSAR SURFACE MOTION"
-            value={Math.min(100, Math.round(zone.insarDisplacementMm * 9))}
-            rawValue={`+${zone.insarDisplacementMm} mm`}
+            value={Math.min(100, Math.round(Math.abs(zone.insarDisplacementMm) * 4))}
+            rawValue={`${zone.insarDisplacementMm > 0 ? '+' : ''}${zone.insarDisplacementMm} mm`}
             weight="10%"
             variant="violet"
           />
@@ -107,15 +108,15 @@ export const AIRiskEngine: React.FC<AIRiskEngineProps> = ({ zone, onOpenAnalysis
       </div>
 
       {/* Projection & Action Footer */}
-      <div className="mt-4 pt-3 border-t border-[#182B42] space-y-2">
-        <div className="p-3 bg-[#07111F]/80 border border-[#182B42] rounded-xl">
+      <div className="mt-4 pt-3 border-t border-[#18283E] space-y-2">
+        <div className="p-2.5 bg-[#07111F]/90 border border-[#18283E] rounded-lg">
           <div className="text-[10px] text-slate-400 font-mono-tech mb-1 uppercase tracking-wider">
-            PROJECTION (NEXT 6 HOURS)
+            TEMPORAL PROJECTION (NEXT 6 HOURS)
           </div>
           <div className="flex items-center gap-2 text-xs font-mono-tech">
-            <span className="font-bold text-[#F97316]">{zone.forecast6h.from}</span>
-            <div className="flex-1 border-t border-dashed border-slate-700"></div>
-            <span className="font-bold text-[#EF4444] animate-pulse">{zone.forecast6h.to}</span>
+            <span className="font-bold text-orange-400">{zone.forecast6h.from}</span>
+            <div className="flex-1 border-t border-dashed border-[#203550]"></div>
+            <span className="font-bold text-rose-400 animate-pulse">{zone.forecast6h.to}</span>
           </div>
         </div>
 

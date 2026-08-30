@@ -41,7 +41,7 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
           setSimulatedGps([pos.coords.latitude, pos.coords.longitude]);
         },
         () => {
-          // Keep current simulated coordinates
+          // Keep current coordinates
         }
       );
     }
@@ -80,11 +80,12 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
       onClose={onClose}
       title="1-TAP GEO-TAGGED FIELD REPORT"
       subtitle="Crowdsourced / Reconnaissance Triage Engine (NER Region)"
+      icon={<ShieldAlert className="w-5 h-5 text-cyan-300" />}
       maxWidth="xl"
     >
       {success ? (
-        <div className="p-8 text-center space-y-3 animate-fade-in">
-          <div className="w-12 h-12 rounded-full bg-[#10B981]/20 border border-[#10B981] text-[#10B981] flex items-center justify-center mx-auto">
+        <div className="p-8 text-center space-y-3 animate-in fade-in zoom-in-95">
+          <div className="w-12 h-12 rounded-full bg-emerald-950/60 border border-emerald-500 text-emerald-400 flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(16,185,129,0.3)]">
             <CheckCircle className="w-6 h-6" />
           </div>
           <h4 className="text-base font-bold text-slate-100 font-sans">
@@ -99,7 +100,7 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
           {/* Reporter Profile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1">
+              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1 font-semibold">
                 Reporter Name
               </label>
               <input
@@ -107,19 +108,19 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
                 value={reporterName}
                 onChange={(e) => setReporterName(e.target.value)}
                 placeholder="e.g. Er. Lalrinmawia"
-                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#182B42] text-xs text-slate-100 focus:outline-none focus:border-[#00D4FF]"
+                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#18283E] text-xs text-slate-100 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1">
+              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1 font-semibold">
                 Designated Role
               </label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as FieldReport['role'])}
-                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#182B42] text-xs text-slate-100 focus:outline-none focus:border-[#00D4FF]"
+                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#18283E] text-xs text-slate-100 focus:outline-none focus:border-cyan-400"
               >
                 <option value="Field Recon Officer">Field Recon Officer</option>
                 <option value="Community Volunteer">Community Volunteer</option>
@@ -132,13 +133,13 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
           {/* Zone & Geo-Location */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1">
+              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1 font-semibold">
                 Target Risk Zone
               </label>
               <select
                 value={zoneCode}
                 onChange={(e) => handleZoneChange(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#182B42] text-xs text-slate-100 focus:outline-none focus:border-[#00D4FF]"
+                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#18283E] text-xs text-slate-100 focus:outline-none focus:border-cyan-400"
               >
                 {zones.map((z) => (
                   <option key={z.code} value={z.code}>
@@ -149,12 +150,12 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
             </div>
 
             <div>
-              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1 flex items-center justify-between">
+              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1 flex items-center justify-between font-semibold">
                 <span>GPS Location</span>
                 <button
                   type="button"
                   onClick={handleAcquireGps}
-                  className="text-[10px] text-[#00D4FF] hover:underline flex items-center gap-1"
+                  className="text-[10px] text-cyan-300 hover:underline flex items-center gap-1 cursor-pointer font-bold"
                 >
                   <MapPin className="w-3 h-3" /> Auto-Acquire
                 </button>
@@ -163,7 +164,7 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
                 type="text"
                 value={`${simulatedGps[0].toFixed(4)}° N, ${simulatedGps[1].toFixed(4)}° E`}
                 readOnly
-                className="w-full px-3 py-2 rounded-lg bg-[#07111F]/60 border border-[#182B42] text-xs font-mono-tech text-slate-300"
+                className="w-full px-3 py-2 rounded-lg bg-[#07111F]/60 border border-[#18283E] text-xs font-mono-tech text-slate-300"
               />
             </div>
           </div>
@@ -171,13 +172,13 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
           {/* Hazard Type & Severity */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1">
+              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1 font-semibold">
                 Observation Type
               </label>
               <select
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value as FieldReport['reportType'])}
-                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#182B42] text-xs text-slate-100 focus:outline-none focus:border-[#00D4FF]"
+                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#18283E] text-xs text-slate-100 focus:outline-none focus:border-cyan-400"
               >
                 <option value="Ground Crack">Ground Crack / Tension Fissure</option>
                 <option value="Rockfall / Debris">Rockfall / Loose Debris</option>
@@ -189,13 +190,13 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
             </div>
 
             <div>
-              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1">
+              <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1 font-semibold">
                 Assessed Severity
               </label>
               <select
                 value={severity}
                 onChange={(e) => setSeverity(e.target.value as RiskLevel)}
-                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#182B42] text-xs text-slate-100 focus:outline-none focus:border-[#00D4FF]"
+                className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#18283E] text-xs text-slate-100 focus:outline-none focus:border-cyan-400"
               >
                 <option value="CRITICAL">CRITICAL (Immediate Collapse Danger)</option>
                 <option value="HIGH">HIGH (Expanding Movement)</option>
@@ -207,7 +208,7 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
 
           {/* Description */}
           <div>
-            <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1">
+            <label className="block text-[11px] font-mono-tech text-slate-400 uppercase mb-1 font-semibold">
               Field Observation Details
             </label>
             <textarea
@@ -215,27 +216,27 @@ export const NewReportModal: React.FC<NewReportModalProps> = ({ isOpen, onClose 
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe crack length, depth, water seepage, retaining structure distortion, or highway blockage..."
               rows={3}
-              className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#182B42] text-xs text-slate-100 focus:outline-none focus:border-[#00D4FF] placeholder-slate-500"
+              className="w-full px-3 py-2 rounded-lg bg-[#07111F] border border-[#18283E] text-xs text-slate-100 focus:outline-none focus:border-cyan-400 placeholder-slate-500"
               required
             />
           </div>
 
           {/* Photo upload simulation */}
-          <div className="p-3 rounded-lg border border-dashed border-[#264366] bg-[#07111F]/50 flex items-center justify-between text-xs font-mono-tech">
+          <div className="p-3 rounded-lg border border-dashed border-[#264366] bg-[#07111F]/70 flex items-center justify-between text-xs font-mono-tech">
             <div className="flex items-center gap-2 text-slate-300">
-              <Camera className="w-4 h-4 text-[#00D4FF]" />
+              <Camera className="w-4 h-4 text-cyan-400" />
               <span>Camera Geo-Stamp: <strong className="text-slate-100">IMG_2026_NER_772.JPG (Compressed 380KB)</strong></span>
             </div>
-            <span className="text-[10px] text-[#14E6C5] font-bold">1-TAP EMBEDDED</span>
+            <span className="text-[10px] text-teal-300 font-bold">1-TAP EMBEDDED</span>
           </div>
 
           {/* Buttons */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#182B42]">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#18283E]">
             <Button type="button" onClick={onClose} variant="ghost" size="sm">
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="md" disabled={isSubmitting}>
-              {isSubmitting ? 'Uploading to DDMA...' : 'Submit Field Report →'}
+            <Button type="submit" variant="primary" size="md" disabled={isSubmitting} loading={isSubmitting}>
+              Submit Field Report →
             </Button>
           </div>
         </form>

@@ -18,23 +18,29 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
       case 'ONLINE':
       case 'DISPATCHED':
         return {
-          dot: 'bg-[#10B981]',
-          text: 'text-[#10B981]',
-          ping: 'bg-[#10B981]'
+          dot: 'bg-emerald-400',
+          text: 'text-emerald-400',
+          ping: 'bg-emerald-400'
         };
       case 'WARNING':
       case 'PENDING':
         return {
-          dot: 'bg-[#F59E0B]',
-          text: 'text-[#F59E0B]',
-          ping: 'bg-[#F59E0B]'
+          dot: 'bg-amber-400',
+          text: 'text-amber-400',
+          ping: 'bg-amber-400'
+        };
+      case 'CALIBRATING':
+        return {
+          dot: 'bg-cyan-400',
+          text: 'text-cyan-400',
+          ping: 'bg-cyan-400'
         };
       case 'OFFLINE':
       default:
         return {
-          dot: 'bg-[#EF4444]',
-          text: 'text-[#EF4444]',
-          ping: 'bg-[#EF4444]'
+          dot: 'bg-rose-500',
+          text: 'text-rose-400',
+          ping: 'bg-rose-500'
         };
     }
   };
@@ -51,7 +57,7 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
         {label || status}
       </span>
       {isSimulated && (
-        <span className="text-[10px] text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 uppercase">
+        <span className="text-[10px] text-amber-300 bg-amber-950/40 px-1.5 py-0.2 rounded border border-amber-500/30 uppercase font-semibold">
           SIMULATED
         </span>
       )}

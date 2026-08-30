@@ -9,11 +9,11 @@ import {
   ServerRiskZone,
   ServerFieldReport
 } from "../data/store";
-import { SensorNode, AlertItem, EmergencyPriorityItem } from "../../src/types";
+import { SensorReading, Alert, EmergencyPriority } from "../../src/types";
 
-export type ServerSensor = SensorNode;
-export type ServerAlert = AlertItem;
-export type ServerEmergencyPriority = EmergencyPriorityItem;
+export type ServerSensor = SensorReading;
+export type ServerAlert = Alert;
+export type ServerEmergencyPriority = EmergencyPriority;
 
 export interface ServerRiskAssessment {
   id: string;

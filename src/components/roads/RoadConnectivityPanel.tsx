@@ -10,16 +10,14 @@ export const RoadConnectivityPanel: React.FC = () => {
   const blockedCount = 3;
 
   return (
-    <div className="bg-[#0E1A2C] border border-[#182B42] rounded-2xl p-5 shadow-xl flex flex-col justify-between h-full">
+    <div className="bg-[#0B1728] border border-[#1c2e47] rounded-xl p-5 shadow-xl flex flex-col justify-between h-full">
       <div>
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#182B42]">
+        <div className="flex items-center justify-between pb-3 border-b border-[#18283E]">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#F59E0B]">
-              <Route className="w-4 h-4" />
-            </div>
+            <Route className="w-4 h-4 text-amber-400" />
             <div>
-              <h3 className="text-sm font-bold text-slate-100 font-sans tracking-wide">
+              <h3 className="text-xs font-bold text-slate-100 font-sans uppercase tracking-widest font-mono-tech">
                 ROAD CONNECTIVITY
               </h3>
               <p className="text-[11px] font-mono-tech text-slate-400">
@@ -28,26 +26,26 @@ export const RoadConnectivityPanel: React.FC = () => {
             </div>
           </div>
 
-          <span className="text-xs font-mono-tech font-bold text-[#F59E0B] bg-[#F59E0B]/10 px-2 py-0.5 rounded border border-[#F59E0B]/30">
+          <span className="text-xs font-mono-tech font-bold text-amber-300 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/30">
             53 ARTERIALS
           </span>
         </div>
 
         {/* 3 Summary Pills: 42 OPEN, 08 AT RISK, 03 BLOCKED */}
         <div className="grid grid-cols-3 gap-3 my-3">
-          <div className="p-3 rounded-xl bg-[#10B981]/10 border border-[#10B981]/30 text-center">
-            <span className="text-[10px] font-mono-tech uppercase text-slate-400 block">OPEN</span>
-            <div className="text-2xl font-extrabold font-mono-tech text-[#10B981] mt-0.5">{openCount}</div>
+          <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-center">
+            <span className="text-[10px] font-mono-tech uppercase text-slate-400 block font-semibold">OPEN</span>
+            <div className="text-2xl font-extrabold font-mono-tech text-emerald-400 mt-0.5">{openCount}</div>
           </div>
 
-          <div className="p-3 rounded-xl bg-[#F97316]/10 border border-[#F97316]/30 text-center">
-            <span className="text-[10px] font-mono-tech uppercase text-slate-400 block">AT RISK</span>
-            <div className="text-2xl font-extrabold font-mono-tech text-[#F97316] mt-0.5">{atRiskCount}</div>
+          <div className="p-3 rounded-lg bg-orange-950/30 border border-orange-500/30 text-center">
+            <span className="text-[10px] font-mono-tech uppercase text-slate-400 block font-semibold">AT RISK</span>
+            <div className="text-2xl font-extrabold font-mono-tech text-orange-400 mt-0.5">{atRiskCount}</div>
           </div>
 
-          <div className="p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/40 text-center shadow-[0_0_10px_rgba(239,68,68,0.2)]">
-            <span className="text-[10px] font-mono-tech uppercase text-slate-400 block">BLOCKED</span>
-            <div className="text-2xl font-extrabold font-mono-tech text-[#EF4444] mt-0.5 animate-pulse">{blockedCount}</div>
+          <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-500/40 text-center shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+            <span className="text-[10px] font-mono-tech uppercase text-slate-400 block font-semibold">BLOCKED</span>
+            <div className="text-2xl font-extrabold font-mono-tech text-rose-400 mt-0.5 animate-pulse">{blockedCount}</div>
           </div>
         </div>
 
@@ -59,7 +57,7 @@ export const RoadConnectivityPanel: React.FC = () => {
             return (
               <div
                 key={road.id}
-                className="p-2.5 rounded-lg bg-[#07111F]/70 border border-[#182B42] flex items-center justify-between text-xs font-sans"
+                className="p-2.5 rounded-lg bg-[#07111F]/90 border border-[#18283E] flex items-center justify-between text-xs font-sans"
               >
                 <div className="truncate pr-2">
                   <div className="flex items-center gap-1.5">
@@ -74,10 +72,10 @@ export const RoadConnectivityPanel: React.FC = () => {
                 <span
                   className={`px-2 py-0.5 rounded font-mono-tech text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${
                     isBlocked
-                      ? 'bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/50 animate-pulse'
+                      ? 'bg-rose-950/70 text-rose-400 border border-rose-500/50 animate-pulse'
                       : isAtRisk
-                      ? 'bg-[#F97316]/20 text-[#F97316] border border-[#F97316]/50'
-                      : 'bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/50'
+                      ? 'bg-orange-950/70 text-orange-400 border border-orange-500/50'
+                      : 'bg-emerald-950/70 text-emerald-400 border border-emerald-500/50'
                   }`}
                 >
                   {road.status}
@@ -89,11 +87,11 @@ export const RoadConnectivityPanel: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="mt-3 pt-3 border-t border-[#182B42] flex items-center justify-between text-[11px] font-mono-tech text-slate-400">
-        <span>PWD & BRO Control Rooms</span>
+      <div className="mt-3 pt-3 border-t border-[#18283E] flex items-center justify-between text-[11px] font-mono-tech text-slate-400">
+        <span>PWD & BRO Corridor Relays</span>
         <button
           onClick={() => setActiveTab('emergency')}
-          className="text-[#00D4FF] hover:underline flex items-center gap-0.5 font-semibold"
+          className="text-cyan-300 hover:underline flex items-center gap-0.5 font-semibold cursor-pointer"
         >
           <span>DETOURS</span>
           <ArrowRight className="w-3 h-3" />
