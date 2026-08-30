@@ -28,6 +28,7 @@ import { RoadConnectivityPanel } from '../../components/roads/RoadConnectivityPa
 import { ActiveAlertsPanel } from '../../components/alerts/ActiveAlertsPanel';
 import { ResponsePriorityPanel } from '../../components/emergency/ResponsePriorityPanel';
 import { SectionHeader } from '../../components/common/SectionHeader';
+import { DemoScenarioPanel } from '../../components/demo/DemoScenarioPanel';
 
 export const DashboardPage: React.FC = () => {
   const { zones, alerts, selectedZone, setSelectedZoneCode, setActiveTab } = useDemo();
@@ -65,6 +66,9 @@ export const DashboardPage: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Demo Scenario Control Panel */}
+      <DemoScenarioPanel />
 
       {/* 4 Big KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
