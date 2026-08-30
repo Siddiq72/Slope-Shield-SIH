@@ -160,34 +160,46 @@ export const riskService = {
         modelEngine: 'SlopeShield Multi-Source Hybrid: XGBoost + Physics-Informed Geomechanical Network (PINN)',
         contributors: {
           rainfall: {
-            weight: 0.35,
-            valuePct: Math.min(100, Math.round(baseZone.rainfallRateMmHr * 1.8 + baseZone.accumulation24hMm * 0.3)),
+            weight: 0.25,
+            valuePct: Math.min(100, Math.round((baseZone.rainfallRateMmHr / 45) * 50 + (baseZone.accumulation24hMm / 180) * 50)),
             rawValue: `${baseZone.rainfallRateMmHr} mm/hr (${baseZone.accumulation24hMm}mm/24h)`,
             status: baseZone.rainfallRateMmHr > 35 ? 'Critical Threshold Exceeded' : 'Elevated Monsoonal Inflow'
           },
           soilMoisture: {
-            weight: 0.25,
+            weight: 0.15,
             valuePct: baseZone.soilMoisturePct,
             rawValue: `${baseZone.soilMoisturePct}% volumetric moisture`,
             status: baseZone.soilMoisturePct > 70 ? 'High Capillary Saturation' : 'Moderate Saturation'
           },
+          porePressure: {
+            weight: 0.15,
+            valuePct: Math.min(100, Math.round((baseZone.porePressureKPa / 60) * 100)),
+            rawValue: `${baseZone.porePressureKPa} kPa pore pressure`,
+            status: baseZone.porePressureKPa > 45 ? 'High Hydrostatic Pressure' : 'Normal Pore Pressure'
+          },
           slopeInstability: {
-            weight: 0.20,
+            weight: 0.15,
             valuePct: baseZone.slopeInstabilityPct,
-            rawValue: `${baseZone.slopeAngleDeg}° slope gradient`,
+            rawValue: `${baseZone.slopeInstabilityPct}% instability index`,
             status: baseZone.slopeInstabilityPct > 75 ? 'Active Shear Plane Strain' : 'Nominal Stability'
+          },
+          insarDeformation: {
+            weight: 0.10,
+            valuePct: Math.min(100, Math.round((Math.abs(baseZone.insarDisplacementMm) / 30) * 100)),
+            rawValue: `${baseZone.insarDisplacementMm} mm surface motion`,
+            status: Math.abs(baseZone.insarDisplacementMm) > 20 ? 'Critical Subsidence Velocity' : 'Sentinel-1 InSAR Deformation Stream'
+          },
+          terrain: {
+            weight: 0.10,
+            valuePct: Math.min(100, Math.round((baseZone.slopeAngleDeg / 50) * 100)),
+            rawValue: `${baseZone.slopeAngleDeg}° slope gradient`,
+            status: baseZone.slopeAngleDeg > 40 ? 'Steep Unstable Slope' : 'Stable Slope Angle'
           },
           historical: {
             weight: 0.10,
             valuePct: baseZone.historicalVulnerabilityPct,
             rawValue: `${baseZone.historicalVulnerabilityPct}% Vulnerability Index`,
             status: 'Regional Landslide Inventory Match'
-          },
-          insarDeformation: {
-            weight: 0.10,
-            valuePct: Math.min(100, Math.round(baseZone.insarDisplacementMm * 9)),
-            rawValue: `+${baseZone.insarDisplacementMm} mm surface motion`,
-            status: 'Sentinel-1 InSAR Deformation Stream'
           }
         },
         temporalProjection: [

@@ -971,34 +971,46 @@ export const initialRiskAnalysisN07: RiskAnalysisExplainability = {
   modelEngine: 'SlopeShield Multi-Source Hybrid: XGBoost + Physics-Informed Geomechanical Network (PINN)',
   contributors: {
     rainfall: {
-      weight: 0.35,
+      weight: 0.25,
       valuePct: 82,
       rawValue: '42 mm/hr (118mm/24h)',
       status: 'Critical Threshold Exceeded (+142% above seasonal mean)'
     },
     soilMoisture: {
-      weight: 0.25,
+      weight: 0.15,
       valuePct: 74,
       rawValue: '74% volumetric content',
       status: 'Capillary Saturation (Pore suction collapsed)'
     },
+    porePressure: {
+      weight: 0.15,
+      valuePct: 97,
+      rawValue: '58.4 kPa pore pressure',
+      status: 'Critical Liquefaction Threshold Reached'
+    },
     slopeInstability: {
-      weight: 0.20,
+      weight: 0.15,
       valuePct: 79,
       rawValue: '5.6° angular acceleration',
       status: 'Active Shear Strain along bedding plane'
-    },
-    historical: {
-      weight: 0.10,
-      valuePct: 61,
-      rawValue: 'High recurrent locus (2018, 2022 events)',
-      status: 'Geomorphic Vulnerability: Disang Shales + Sandstone Interbeds'
     },
     insarDeformation: {
       weight: 0.10,
       valuePct: 84,
       rawValue: '+8.4 mm/12d line-of-sight motion',
       status: 'Sentinel-1 InSAR confirms downslope creep'
+    },
+    terrain: {
+      weight: 0.10,
+      valuePct: 96,
+      rawValue: '48° slope angle',
+      status: 'Steep Escarpment bedding orientation'
+    },
+    historical: {
+      weight: 0.10,
+      valuePct: 61,
+      rawValue: 'High recurrent locus (2018, 2022 events)',
+      status: 'Geomorphic Vulnerability: Disang Shales + Sandstone Interbeds'
     }
   },
   temporalProjection: [

@@ -4,7 +4,8 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { dbStore } from "./server/database/dbStore";
-import { computeZoneExplainability, computeParametricSimulation } from "./server/services/riskEngine";
+import { computeZoneExplainability, computeParametricSimulation, calculateRisk } from "./server/services/riskEngine";
+import { STAGE_WEATHER, STAGE_TELEMETRY } from "./src/data/stageMaps";
 
 dotenv.config();
 
@@ -53,23 +54,7 @@ interface ScenarioState {
   updatedAt: string;
 }
 
-const STAGE_WEATHER: Record<number, { rainfallRateMmHr: number; accumulation24hMm: number; intensityLabel: string; trend: string; humidityPct: number }> = {
-  1: { rainfallRateMmHr: 4,    accumulation24hMm: 16,    intensityLabel: 'NORMAL',           trend: 'STABLE',     humidityPct: 72 },
-  2: { rainfallRateMmHr: 22,   accumulation24hMm: 52,    intensityLabel: 'MODERATE RAIN',     trend: 'INCREASING', humidityPct: 82 },
-  3: { rainfallRateMmHr: 34,   accumulation24hMm: 86,    intensityLabel: 'HEAVY DOWNPOUR',    trend: 'INCREASING', humidityPct: 90 },
-  4: { rainfallRateMmHr: 40,   accumulation24hMm: 104,   intensityLabel: 'HEAVY DOWNPOUR',    trend: 'INCREASING', humidityPct: 93 },
-  5: { rainfallRateMmHr: 42.5, accumulation24hMm: 168.4, intensityLabel: 'TORRENTIAL MONSOON', trend: 'INCREASING', humidityPct: 95 },
-  6: { rainfallRateMmHr: 5,    accumulation24hMm: 120,   intensityLabel: 'NORMAL',           trend: 'DECREASING', humidityPct: 75 },
-};
 
-const STAGE_ZONE_N07: Record<number, { riskScore: number; riskLevel: string; soilMoisturePct: number; porePressureKPa: number; insarDisplacementMm: number; slopeInstabilityPct: number; roadStatus: string }> = {
-  1: { riskScore: 38, riskLevel: 'LOW',      soilMoisturePct: 34, porePressureKPa: 14.2, insarDisplacementMm: 0.6,  slopeInstabilityPct: 28, roadStatus: 'OPEN' },
-  2: { riskScore: 58, riskLevel: 'MODERATE', soilMoisturePct: 48, porePressureKPa: 26.5, insarDisplacementMm: 1.8,  slopeInstabilityPct: 49, roadStatus: 'OPEN' },
-  3: { riskScore: 76, riskLevel: 'HIGH',     soilMoisturePct: 62, porePressureKPa: 42.0, insarDisplacementMm: 4.1,  slopeInstabilityPct: 68, roadStatus: 'AT RISK' },
-  4: { riskScore: 86, riskLevel: 'HIGH',     soilMoisturePct: 70, porePressureKPa: 52.6, insarDisplacementMm: 6.8,  slopeInstabilityPct: 76, roadStatus: 'AT RISK' },
-  5: { riskScore: 92, riskLevel: 'CRITICAL', soilMoisturePct: 74, porePressureKPa: 58.4, insarDisplacementMm: 8.4,  slopeInstabilityPct: 79, roadStatus: 'AT RISK' },
-  6: { riskScore: 48, riskLevel: 'MODERATE', soilMoisturePct: 55, porePressureKPa: 28.0, insarDisplacementMm: 8.8,  slopeInstabilityPct: 45, roadStatus: 'OPEN' },
-};
 
 let activeScenario: ScenarioState = { stage: 5, scenarioId: 'aizawl-monsoon', updatedAt: new Date().toISOString() };
 
@@ -119,7 +104,26 @@ app.post("/api/scenario", (req, res) => {
 app.get("/api/scenario-state", (_req, res) => {
   const state = dbStore.getScenarioState();
   const stageData = STAGE_WEATHER[activeScenario.stage];
-  const zoneData = STAGE_ZONE_N07[activeScenario.stage];
+  
+  // Dynamically compute target zone data to keep in sync
+  const telemetry = STAGE_TELEMETRY[activeScenario.stage];
+  const calc = calculateRisk({
+    rainfallRateMmHr: stageData.rainfallRateMmHr,
+    accumulation24hMm: stageData.accumulation24hMm,
+    soilMoisturePct: telemetry.soilMoisturePct,
+    porePressureKPa: telemetry.porePressureKPa,
+    slopeInstabilityPct: telemetry.slopeInstabilityPct,
+    insarDisplacementMm: telemetry.insarDisplacementMm,
+    historicalVulnerabilityPct: 88, // target zone historical vulnerability (N-07)
+    slopeAngleDeg: 48 // target zone slope angle (N-07)
+  });
+
+  const zoneData = {
+    ...telemetry,
+    riskScore: calc.score,
+    riskLevel: calc.severity
+  };
+
   res.json({
     success: true,
     activeScenario: state.activeScenario,
