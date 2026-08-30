@@ -78,18 +78,51 @@ export const RiskAnalysisPage: React.FC = () => {
   };
 
   // Compute what-if simulated risk score
-  const computedSimRisk = Math.min(
-    99,
-    Math.max(
-      15,
-      Math.round(
-        simRainfall * 0.9 +
-        simSoilMoisture * 0.45 +
-        simTiltRate * 4.2 +
-        (selectedZone.historicalVulnerabilityPct * 0.15)
-      )
-    )
-  );
+  const runLocalSimulation = () => {
+    const rainfallRate = simRainfall;
+    const accumulation = simRainfall * 4;
+    const soilMoisture = simSoilMoisture;
+    const porePressure = simSoilMoisture * 0.7;
+    const slopeInstability = Math.min(100, simTiltRate * 16);
+    const insarDisplacement = -Math.min(30, simTiltRate * 5);
+    const historicalVulnerability = selectedZone.historicalVulnerabilityPct;
+    const slopeAngle = selectedZone.slopeAngleDeg;
+
+    const normRainfallRate = Math.min(100, Math.max(0, (rainfallRate / 45) * 100));
+    const normAccumulation = Math.min(100, Math.max(0, (accumulation / 180) * 100));
+    const normRainfall = normRainfallRate * 0.5 + normAccumulation * 0.5;
+
+    const normSoilMoisture = Math.min(100, Math.max(0, soilMoisture));
+    const normPorePressure = Math.min(100, Math.max(0, (porePressure / 60) * 100));
+    const normSlopeInstability = Math.min(100, Math.max(0, slopeInstability));
+    const normInSAR = Math.min(100, Math.max(0, (Math.abs(insarDisplacement) / 30) * 100));
+    const normTerrain = Math.min(100, Math.max(0, (slopeAngle / 50) * 100));
+    const normHistorical = Math.min(100, Math.max(0, historicalVulnerability));
+
+    const weights = {
+      rainfall: 0.25,
+      soilMoisture: 0.15,
+      porePressure: 0.15,
+      slopeInstability: 0.15,
+      insarDeformation: 0.10,
+      terrain: 0.10,
+      historical: 0.10
+    };
+
+    const score = Math.round(
+      normRainfall * weights.rainfall +
+      normSoilMoisture * weights.soilMoisture +
+      normPorePressure * weights.porePressure +
+      normSlopeInstability * weights.slopeInstability +
+      normInSAR * weights.insarDeformation +
+      normTerrain * weights.terrain +
+      normHistorical * weights.historical
+    );
+
+    return Math.min(100, Math.max(0, score));
+  };
+
+  const computedSimRisk = runLocalSimulation();
 
   const getSimSeverity = (score: number) => {
     if (score >= 85) return 'CRITICAL';
@@ -300,7 +333,7 @@ export const RiskAnalysisPage: React.FC = () => {
                   label="1. Monsoonal Precipitation Rate & 24h Accumulation"
                   value={analysis.contributors.rainfall.valuePct}
                   rawValue={analysis.contributors.rainfall.rawValue}
-                  weight="35% Weight"
+                  weight="25% Weight"
                   variant="cyan"
                 />
                 <span className="text-[10px] font-mono-tech text-slate-400 block mt-0.5 pl-1">
@@ -313,7 +346,7 @@ export const RiskAnalysisPage: React.FC = () => {
                   label="2. Volumetric Soil Moisture & Suction Loss"
                   value={analysis.contributors.soilMoisture.valuePct}
                   rawValue={analysis.contributors.soilMoisture.rawValue}
-                  weight="25% Weight"
+                  weight="15% Weight"
                   variant="teal"
                 />
                 <span className="text-[10px] font-mono-tech text-slate-400 block mt-0.5 pl-1">
@@ -323,10 +356,23 @@ export const RiskAnalysisPage: React.FC = () => {
 
               <div>
                 <ProgressBar
-                  label="3. Slope Angular Tilt & Shear Instability"
+                  label="3. Subsurface Pore-Water Hydrostatic Pressure"
+                  value={analysis.contributors.porePressure.valuePct}
+                  rawValue={analysis.contributors.porePressure.rawValue}
+                  weight="15% Weight"
+                  variant="cyan"
+                />
+                <span className="text-[10px] font-mono-tech text-slate-400 block mt-0.5 pl-1">
+                  Status: {analysis.contributors.porePressure.status}
+                </span>
+              </div>
+
+              <div>
+                <ProgressBar
+                  label="4. Ground Tilt & Slope Instability"
                   value={analysis.contributors.slopeInstability.valuePct}
                   rawValue={analysis.contributors.slopeInstability.rawValue}
-                  weight="20% Weight"
+                  weight="15% Weight"
                   variant="risk"
                   riskScore={analysis.contributors.slopeInstability.valuePct}
                 />
@@ -337,7 +383,7 @@ export const RiskAnalysisPage: React.FC = () => {
 
               <div>
                 <ProgressBar
-                  label="4. Sentinel-1 InSAR Surface Creep Displacement"
+                  label="5. Sentinel-1 InSAR Surface Creep Displacement"
                   value={analysis.contributors.insarDeformation.valuePct}
                   rawValue={analysis.contributors.insarDeformation.rawValue}
                   weight="10% Weight"
@@ -350,7 +396,20 @@ export const RiskAnalysisPage: React.FC = () => {
 
               <div>
                 <ProgressBar
-                  label="5. Historical Geomorphological Vulnerability"
+                  label="6. Terrain Gradient & Slope Susceptibility"
+                  value={analysis.contributors.terrain.valuePct}
+                  rawValue={analysis.contributors.terrain.rawValue}
+                  weight="10% Weight"
+                  variant="amber"
+                />
+                <span className="text-[10px] font-mono-tech text-slate-400 block mt-0.5 pl-1">
+                  Status: {analysis.contributors.terrain.status}
+                </span>
+              </div>
+
+              <div>
+                <ProgressBar
+                  label="7. Historical Landslide Susceptibility Locus"
                   value={analysis.contributors.historical.valuePct}
                   rawValue={analysis.contributors.historical.rawValue}
                   weight="10% Weight"

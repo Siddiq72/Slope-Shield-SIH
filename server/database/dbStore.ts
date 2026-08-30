@@ -10,6 +10,7 @@ import {
   ServerFieldReport
 } from "../data/store";
 import { SensorReading, Alert, EmergencyPriority } from "../../src/types";
+import { calculateRisk } from "../services/riskEngine";
 
 export type ServerSensor = SensorReading;
 export type ServerAlert = Alert;
@@ -276,15 +277,13 @@ class LocalDatabaseManager {
     const stageWeather = STAGE_WEATHER_MAP[stage] || STAGE_WEATHER_MAP[5];
 
     return this.data.zones.map((z) => {
+      let updatedZone = { ...z };
       if (z.code === targetZoneCode) {
-        const riskScore = stageTelemetry.riskScore;
         const trend = stage === 6 ? 'DECREASING' : stage >= 2 ? 'INCREASING' : 'STABLE';
         const forecastTo = stage === 6 ? 'LOW' : stage >= 3 ? 'CRITICAL' : stage === 2 ? 'HIGH' : 'LOW';
 
-        return {
+        updatedZone = {
           ...z,
-          riskScore: riskScore,
-          riskLevel: stageTelemetry.riskLevel,
           rainfallRateMmHr: stageWeather.rainfallRateMmHr,
           accumulation24hMm: stageWeather.accumulation24hMm,
           soilMoisturePct: stageTelemetry.soilMoisturePct,
@@ -296,12 +295,33 @@ class LocalDatabaseManager {
           forecast6h: {
             from: z.riskLevel,
             to: forecastTo,
-            projectedScore: Math.min(99, Math.round(riskScore * 1.05)),
+            projectedScore: 0, // Will be updated below
             trend: trend
           }
         };
       }
-      return z;
+
+      // Calculate risk dynamically for EVERY zone using the risk engine!
+      const calc = calculateRisk({
+        rainfallRateMmHr: updatedZone.rainfallRateMmHr,
+        accumulation24hMm: updatedZone.accumulation24hMm,
+        soilMoisturePct: updatedZone.soilMoisturePct,
+        porePressureKPa: updatedZone.porePressureKPa,
+        slopeInstabilityPct: updatedZone.slopeInstabilityPct,
+        insarDisplacementMm: updatedZone.insarDisplacementMm,
+        historicalVulnerabilityPct: updatedZone.historicalVulnerabilityPct,
+        slopeAngleDeg: updatedZone.slopeAngleDeg
+      });
+
+      updatedZone.riskScore = calc.score;
+      updatedZone.riskLevel = calc.severity;
+      updatedZone.forecast6h = {
+        ...updatedZone.forecast6h,
+        from: calc.severity,
+        projectedScore: Math.min(99, Math.round(calc.score * 1.05))
+      };
+
+      return updatedZone;
     });
   }
 
@@ -340,6 +360,11 @@ class LocalDatabaseManager {
     const stage = this.activeScenarioStage;
     const targetZoneCode = this.activeScenarioId === 'sonapur-corridor' ? 'N-03' : this.activeScenarioId === 'gangtok-seismic' ? 'N-11' : 'N-07';
 
+    const zones = this.getZones();
+    const targetZone = zones.find(z => z.code === targetZoneCode);
+    const calculatedScore = targetZone ? targetZone.riskScore : 50;
+    const calculatedSeverity = targetZone ? targetZone.riskLevel : 'LOW';
+
     let alerts = [...this.data.alerts];
 
     if (stage <= 2) {
@@ -347,7 +372,7 @@ class LocalDatabaseManager {
     } else {
       alerts = alerts.map((a) => {
         if (a.zoneCode === targetZoneCode) {
-          let severity = STAGE_TELEMETRY_MAP[stage].riskLevel;
+          let severity = calculatedSeverity;
           let headline = `SIMULATED ALERT: Accelerated Slope Instability at ${targetZoneCode}`;
           let acknowledged = a.acknowledged;
           let status: ServerAlert['status'] = 'PENDING REVIEW';
@@ -377,7 +402,7 @@ class LocalDatabaseManager {
             headline,
             acknowledged,
             status,
-            riskScore: STAGE_TELEMETRY_MAP[stage].riskScore
+            riskScore: calculatedScore
           };
         }
         return a;

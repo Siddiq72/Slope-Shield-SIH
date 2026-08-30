@@ -271,7 +271,8 @@ app.get("/api/risk-zones/:zoneId", (req, res) => {
 // -----------------------------------------------------------------------------
 app.get("/api/risk-analysis/:zoneId", (req, res) => {
   const { zoneId } = req.params;
-  const analysis = computeZoneExplainability(zoneId);
+  const zone = dbStore.getZoneByCode(zoneId) || dbStore.getZones()[0];
+  const analysis = computeZoneExplainability(zone);
   res.json({ success: true, data: analysis });
 });
 

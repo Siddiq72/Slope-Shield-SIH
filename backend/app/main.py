@@ -118,21 +118,90 @@ sensor_histories_map = {
     ],
 }
 
+def calculate_risk(factors: Dict[str, float]) -> Dict[str, Any]:
+    rainfall_rate = float(factors.get("rainfallRateMmHr", 0))
+    accumulation = float(factors.get("accumulation24hMm", 0))
+    soil_moisture = float(factors.get("soilMoisturePct", 0))
+    pore_pressure = float(factors.get("porePressureKPa", 0))
+    slope_instability = float(factors.get("slopeInstabilityPct", 0))
+    insar_displacement = float(factors.get("insarDisplacementMm", 0))
+    historical_vulnerability = float(factors.get("historicalVulnerabilityPct", 0))
+    slope_angle = float(factors.get("slopeAngleDeg", 0))
+
+    norm_rainfall_rate = min(100.0, max(0.0, (rainfall_rate / 45.0) * 100.0))
+    norm_accumulation = min(100.0, max(0.0, (accumulation / 180.0) * 100.0))
+    norm_rainfall = norm_rainfall_rate * 0.5 + norm_accumulation * 0.5
+
+    norm_soil_moisture = min(100.0, max(0.0, soil_moisture))
+    norm_pore_pressure = min(100.0, max(0.0, (pore_pressure / 60.0) * 100.0))
+    norm_slope_instability = min(100.0, max(0.0, slope_instability))
+    norm_insar = min(100.0, max(0.0, (abs(insar_displacement) / 30.0) * 100.0))
+    norm_terrain = min(100.0, max(0.0, (slope_angle / 50.0) * 100.0))
+    norm_historical = min(100.0, max(0.0, historical_vulnerability))
+
+    weights = {
+        "rainfall": 0.25,
+        "soilMoisture": 0.15,
+        "porePressure": 0.15,
+        "slopeInstability": 0.15,
+        "insarDeformation": 0.10,
+        "terrain": 0.10,
+        "historical": 0.10
+    }
+
+    score = round(
+        norm_rainfall * weights["rainfall"] +
+        norm_soil_moisture * weights["soilMoisture"] +
+        norm_pore_pressure * weights["porePressure"] +
+        norm_slope_instability * weights["slopeInstability"] +
+        norm_insar * weights["insarDeformation"] +
+        norm_terrain * weights["terrain"] +
+        norm_historical * weights["historical"]
+    )
+
+    clamped_score = min(100, max(0, score))
+
+    if clamped_score >= 85:
+        severity = "CRITICAL"
+    elif clamped_score >= 70:
+        severity = "HIGH"
+    elif clamped_score >= 45:
+        severity = "MODERATE"
+    else:
+        severity = "LOW"
+
+    return {
+        "score": clamped_score,
+        "severity": severity
+    }
+
 def zone_to_dict(z: RiskZoneModel) -> Dict[str, Any]:
     target_zone_code = "N-03" if active_scenario["scenarioId"] == "sonapur-corridor" else "N-11" if active_scenario["scenarioId"] == "gangtok-seismic" else "N-07"
     stage = active_scenario["stage"]
     is_target = z.zone_code.upper() == target_zone_code.upper()
 
-    risk_score = STAGE_TELEMETRY_MAP[stage]["riskScore"] if is_target else z.risk_score
-    risk_level = STAGE_TELEMETRY_MAP[stage]["riskLevel"] if is_target else z.risk_level
     rainfall_rate = STAGE_WEATHER_MAP[stage]["rainfallRateMmHr"] if is_target else z.rainfall_rate_mm_hr
-    accumulation = STAGE_WEATHER_MAP[stage]["accumulation24hMm"] if is_target else z.accumulation_24h_mm
+    accumulation = STAGE_WEATHER_MAP[stage]["accumulation24hMm"] if is_target else z.accumulation_24_mm
     soil_moisture = STAGE_TELEMETRY_MAP[stage]["soilMoisturePct"] if is_target else z.soil_moisture_pct
     pore_pressure = STAGE_TELEMETRY_MAP[stage]["porePressureKPa"] if is_target else z.pore_pressure_kpa
     insar_disp = STAGE_TELEMETRY_MAP[stage]["insarDisplacementMm"] if is_target else z.insar_displacement_mm
     slope_instab = STAGE_TELEMETRY_MAP[stage]["slopeInstabilityPct"] if is_target else z.slope_instability_pct
     road_status = STAGE_TELEMETRY_MAP[stage]["roadStatus"] if is_target else z.road_status
     recommended_action = STAGE_TELEMETRY_MAP[stage]["recommendedAction"] if is_target else z.recommended_action
+
+    calc = calculate_risk({
+        "rainfallRateMmHr": rainfall_rate,
+        "accumulation24hMm": accumulation,
+        "soilMoisturePct": soil_moisture,
+        "porePressureKPa": pore_pressure,
+        "slopeInstabilityPct": slope_instab,
+        "insarDisplacementMm": insar_disp,
+        "historicalVulnerabilityPct": z.historical_vulnerability_pct,
+        "slopeAngleDeg": z.slope_angle_deg
+    })
+
+    risk_score = calc["score"]
+    risk_level = calc["severity"]
 
     forecast_to = "LOW" if stage == 6 else "CRITICAL" if stage >= 3 else "HIGH" if stage == 2 else "LOW"
     forecast_trend = "DECREASING" if stage == 6 else "INCREASING" if stage >= 2 else "STABLE"
@@ -157,7 +226,7 @@ def zone_to_dict(z: RiskZoneModel) -> Dict[str, Any]:
         "roadStatus": road_status,
         "affectedRoad": z.affected_road,
         "forecast6h": {
-            "from": z.risk_level,
+            "from": risk_level,
             "to": forecast_to,
             "projectedScore": min(99, int(risk_score * 1.05)),
             "trend": forecast_trend
@@ -487,39 +556,73 @@ def get_risk_analysis(zone_id: str, db: Session = Depends(get_db)):
     if not zone:
         raise HTTPException(status_code=404, detail="No risk zones available in database")
 
+    zone_dict = zone_to_dict(zone)
+    
+    rainfall_rate = zone_dict["rainfallRateMmHr"]
+    accumulation = zone_dict["accumulation24hMm"]
+    soil_moisture = zone_dict["soilMoisturePct"]
+    pore_pressure = zone_dict["porePressureKPa"]
+    slope_instab = zone_dict["slopeInstabilityPct"]
+    insar_disp = zone_dict["insarDisplacementMm"]
+    historical_vulnerability = zone_dict["historicalVulnerabilityPct"]
+    slope_angle = zone_dict["slopeAngleDeg"]
+
+    norm_rainfall_rate = min(100.0, max(0.0, (rainfall_rate / 45.0) * 100.0))
+    norm_accumulation = min(100.0, max(0.0, (accumulation / 180.0) * 100.0))
+    norm_rainfall = norm_rainfall_rate * 0.5 + norm_accumulation * 0.5
+
+    norm_soil_moisture = min(100.0, max(0.0, soil_moisture))
+    norm_pore_pressure = min(100.0, max(0.0, (pore_pressure / 60.0) * 100.0))
+    norm_slope_instability = min(100.0, max(0.0, slope_instab))
+    norm_insar = min(100.0, max(0.0, (abs(insar_disp) / 30.0) * 100.0))
+    norm_terrain = min(100.0, max(0.0, (slope_angle / 50.0) * 100.0))
+    norm_historical = min(100.0, max(0.0, historical_vulnerability))
+
+    weights = {
+        "rainfall": 0.25,
+        "soilMoisture": 0.15,
+        "porePressure": 0.15,
+        "slopeInstability": 0.15,
+        "insarDeformation": 0.10,
+        "terrain": 0.10,
+        "historical": 0.10
+    }
+
     return {
         "success": True,
         "data": {
-            "zoneCode": zone.zone_code,
-            "zoneName": f"{zone.zone_name} ({zone.district})",
-            "currentRiskScore": zone.risk_score,
-            "severity": zone.risk_level,
+            "zoneCode": zone_dict["code"],
+            "zoneName": f"{zone_dict['name']} ({zone_dict['district']})",
+            "currentRiskScore": zone_dict["riskScore"],
+            "severity": zone_dict["riskLevel"],
             "aiConfidencePct": 94,
             "modelEngine": "SlopeShield PINN + XGBoost Ensemble",
             "contributors": {
-                "rainfall": {"weight": 0.35, "valuePct": min(100, int(zone.rainfall_rate_mm_hr * 2.2)), "rawValue": f"{zone.rainfall_rate_mm_hr} mm/hr", "status": "Threshold Exceeded"},
-                "soilMoisture": {"weight": 0.25, "valuePct": int(zone.soil_moisture_pct), "rawValue": f"{zone.soil_moisture_pct}% moisture", "status": "Saturated"},
-                "slopeInstability": {"weight": 0.20, "valuePct": int(zone.slope_instability_pct), "rawValue": f"{zone.slope_angle_deg}° slope", "status": "Active Creep"},
-                "historical": {"weight": 0.10, "valuePct": int(zone.historical_vulnerability_pct), "rawValue": "High Recurrence", "status": "Vulnerability Match"},
-                "insarDeformation": {"weight": 0.10, "valuePct": int(abs(zone.insar_displacement_mm) * 3.2), "rawValue": f"{zone.insar_displacement_mm} mm", "status": "LOS Displacement"}
+                "rainfall": {"weight": weights["rainfall"], "valuePct": int(round(norm_rainfall)), "rawValue": f"{rainfall_rate} mm/hr ({accumulation}mm/24h)", "status": "Threshold Exceeded" if rainfall_rate > 35 else "Elevated"},
+                "soilMoisture": {"weight": weights["soilMoisture"], "valuePct": int(round(norm_soil_moisture)), "rawValue": f"{soil_moisture}% moisture", "status": "High" if soil_moisture > 70 else "Moderate"},
+                "porePressure": {"weight": weights["porePressure"], "valuePct": int(round(norm_pore_pressure)), "rawValue": f"{pore_pressure} kPa", "status": "High" if pore_pressure > 45 else "Normal"},
+                "slopeInstability": {"weight": weights["slopeInstability"], "valuePct": int(round(norm_slope_instability)), "rawValue": f"{slope_instab}% instability", "status": "Active Creep" if slope_instab > 75 else "Stable"},
+                "insarDeformation": {"weight": weights["insarDeformation"], "valuePct": int(round(norm_insar)), "rawValue": f"{insar_disp} mm", "status": "Creep Detected"},
+                "terrain": {"weight": weights["terrain"], "valuePct": int(round(norm_terrain)), "rawValue": f"{slope_angle}° slope", "status": "Steep" if slope_angle > 40 else "Stable"},
+                "historical": {"weight": weights["historical"], "valuePct": int(round(norm_historical)), "rawValue": f"{historical_vulnerability}%", "status": "Susceptible"}
             },
             "temporalProjection": [
-                {"hoursAhead": 0, "riskScore": zone.risk_score, "rainfallIntensity": zone.rainfall_rate_mm_hr, "soilSaturation": zone.soil_moisture_pct, "confidence": 94},
-                {"hoursAhead": 2, "riskScore": min(99, int(zone.risk_score * 1.04)), "rainfallIntensity": zone.rainfall_rate_mm_hr * 1.1, "soilSaturation": min(98, zone.soil_moisture_pct + 4), "confidence": 91},
-                {"hoursAhead": 4, "riskScore": min(99, int(zone.risk_score * 1.06)), "rainfallIntensity": zone.rainfall_rate_mm_hr * 1.15, "soilSaturation": min(98, zone.soil_moisture_pct + 7), "confidence": 88},
-                {"hoursAhead": 6, "riskScore": min(99, int(zone.risk_score * 1.08)), "rainfallIntensity": zone.rainfall_rate_mm_hr * 0.9, "soilSaturation": min(98, zone.soil_moisture_pct + 8), "confidence": 85}
+                {"hoursAhead": 0, "riskScore": zone_dict["riskScore"], "rainfallIntensity": rainfall_rate, "soilSaturation": soil_moisture, "confidence": 94},
+                {"hoursAhead": 2, "riskScore": min(99, int(zone_dict["riskScore"] * 1.04)), "rainfallIntensity": rainfall_rate * 1.1, "soilSaturation": min(98, soil_moisture + 4), "confidence": 91},
+                {"hoursAhead": 4, "riskScore": min(99, int(zone_dict["riskScore"] * 1.06)), "rainfallIntensity": rainfall_rate * 1.15, "soilSaturation": min(98, soil_moisture + 7), "confidence": 88},
+                {"hoursAhead": 6, "riskScore": min(99, int(zone_dict["riskScore"] * 1.08)), "rainfallIntensity": rainfall_rate * 0.9, "soilSaturation": min(98, soil_moisture + 8), "confidence": 85}
             ],
             "falseAlarmSuppressionMetrics": {
-                "antecedentSoilMoistureIndex": round(zone.soil_moisture_pct / 100, 2),
+                "antecedentSoilMoistureIndex": round(soil_moisture / 100.0, 2),
                 "vegetationIndexNDVI": 0.45,
-                "geologicalFrictionAngle": round(32 - zone.slope_angle_deg * 0.15, 1),
+                "geologicalFrictionAngle": round(32.0 - slope_angle * 0.15, 1),
                 "crossValidationScore": 0.958,
-                "historicalCorrelationMatch": f"88.5% pattern match for {zone.district} geomorphology"
+                "historicalCorrelationMatch": f"88.5% pattern match for {zone_dict['district']} geomorphology"
             },
             "whyThisScore": [
-                f"Rainfall rate ({zone.rainfall_rate_mm_hr} mm/hr) exceeds critical saturation threshold.",
-                f"Soil moisture at {zone.soil_moisture_pct}% creates elevated pore water pressure.",
-                f"Slope angle of {zone.slope_angle_deg}° creates substantial shear impetus."
+                f"Rainfall rate ({rainfall_rate} mm/hr) and 24h accumulation ({accumulation}mm) exceeds critical saturation threshold.",
+                f"Subsurface pore water pressure ({pore_pressure} kPa) reduces resisting shear strength.",
+                f"Slope angle of {slope_angle}° provides high gravitational shear impetus."
             ]
         }
     }

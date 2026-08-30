@@ -179,9 +179,11 @@ export interface RiskAnalysisExplainability {
   contributors: {
     rainfall: { weight: number; valuePct: number; rawValue: string; status: string };
     soilMoisture: { weight: number; valuePct: number; rawValue: string; status: string };
+    porePressure: { weight: number; valuePct: number; rawValue: string; status: string };
     slopeInstability: { weight: number; valuePct: number; rawValue: string; status: string };
-    historical: { weight: number; valuePct: number; rawValue: string; status: string };
     insarDeformation: { weight: number; valuePct: number; rawValue: string; status: string };
+    terrain: { weight: number; valuePct: number; rawValue: string; status: string };
+    historical: { weight: number; valuePct: number; rawValue: string; status: string };
   };
   temporalProjection: Array<{
     hoursAhead: number;

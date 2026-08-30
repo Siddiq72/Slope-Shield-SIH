@@ -66,9 +66,9 @@ export const AIRiskEngine: React.FC<AIRiskEngineProps> = ({ zone, onOpenAnalysis
 
           <ProgressBar
             label="RAINFALL"
-            value={zone.rainfallRateMmHr > 35 ? 82 : 45}
+            value={Math.min(100, Math.round((zone.rainfallRateMmHr / 45) * 50 + (zone.accumulation24hMm / 180) * 50))}
             rawValue={`${zone.rainfallRateMmHr} mm/hr`}
-            weight="35%"
+            weight="25%"
             variant="cyan"
           />
 
@@ -76,33 +76,49 @@ export const AIRiskEngine: React.FC<AIRiskEngineProps> = ({ zone, onOpenAnalysis
             label="SOIL MOISTURE"
             value={zone.soilMoisturePct}
             rawValue={`${zone.soilMoisturePct}%`}
-            weight="25%"
+            weight="15%"
             variant="teal"
+          />
+
+          <ProgressBar
+            label="PORE-WATER PRESSURE"
+            value={Math.min(100, Math.round((zone.porePressureKPa / 60) * 100))}
+            rawValue={`${zone.porePressureKPa} kPa`}
+            weight="15%"
+            variant="cyan"
           />
 
           <ProgressBar
             label="SLOPE INSTABILITY"
             value={zone.slopeInstabilityPct}
-            rawValue={`${zone.slopeAngleDeg}°`}
-            weight="20%"
+            rawValue={`${zone.slopeInstabilityPct}%`}
+            weight="15%"
             variant="risk"
             riskScore={zone.slopeInstabilityPct}
           />
 
           <ProgressBar
-            label="HISTORICAL LOCUS"
-            value={zone.historicalVulnerabilityPct}
-            rawValue="Recurrent"
+            label="InSAR SURFACE MOTION"
+            value={Math.min(100, Math.round((Math.abs(zone.insarDisplacementMm) / 30) * 100))}
+            rawValue={`${zone.insarDisplacementMm > 0 ? '+' : ''}${zone.insarDisplacementMm} mm`}
+            weight="10%"
+            variant="violet"
+          />
+
+          <ProgressBar
+            label="TERRAIN GRADIENT"
+            value={Math.min(100, Math.round((zone.slopeAngleDeg / 50) * 100))}
+            rawValue={`${zone.slopeAngleDeg}°`}
             weight="10%"
             variant="amber"
           />
 
           <ProgressBar
-            label="InSAR SURFACE MOTION"
-            value={Math.min(100, Math.round(Math.abs(zone.insarDisplacementMm) * 4))}
-            rawValue={`${zone.insarDisplacementMm > 0 ? '+' : ''}${zone.insarDisplacementMm} mm`}
+            label="HISTORICAL LOCUS"
+            value={zone.historicalVulnerabilityPct}
+            rawValue={`${zone.historicalVulnerabilityPct}%`}
             weight="10%"
-            variant="violet"
+            variant="amber"
           />
         </div>
       </div>

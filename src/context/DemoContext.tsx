@@ -211,27 +211,27 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let forecastTrend: 'INCREASING' | 'STABLE' | 'DECREASING' = 'STABLE';
           let forecastTo: RiskLevel = 'LOW';
           if (stage === 1) {
-            riskScore = 38; riskLevel = 'LOW'; rainfallRateMmHr = 4; accumulation24hMm = 16;
+            riskScore = 35; riskLevel = 'LOW'; rainfallRateMmHr = 4; accumulation24hMm = 16;
             soilMoisturePct = 34; porePressureKPa = 14.2; insarDisplacementMm = 0.6; slopeInstabilityPct = 28;
             roadStatus = 'OPEN'; forecastTrend = 'STABLE'; forecastTo = 'LOW';
           } else if (stage === 2) {
-            riskScore = 58; riskLevel = 'MODERATE'; rainfallRateMmHr = 22; accumulation24hMm = 52;
+            riskScore = 54; riskLevel = 'MODERATE'; rainfallRateMmHr = 22; accumulation24hMm = 52;
             soilMoisturePct = 48; porePressureKPa = 26.5; insarDisplacementMm = 1.8; slopeInstabilityPct = 49;
             roadStatus = 'OPEN'; forecastTrend = 'INCREASING'; forecastTo = 'HIGH';
           } else if (stage === 3) {
-            riskScore = 76; riskLevel = 'HIGH'; rainfallRateMmHr = 34; accumulation24hMm = 86;
+            riskScore = 71; riskLevel = 'HIGH'; rainfallRateMmHr = 34; accumulation24hMm = 86;
             soilMoisturePct = 62; porePressureKPa = 42.0; insarDisplacementMm = 4.1; slopeInstabilityPct = 68;
             roadStatus = 'AT RISK'; forecastTrend = 'INCREASING'; forecastTo = 'CRITICAL';
           } else if (stage === 4) {
-            riskScore = 86; riskLevel = 'HIGH'; rainfallRateMmHr = 40; accumulation24hMm = 104;
+            riskScore = 81; riskLevel = 'HIGH'; rainfallRateMmHr = 40; accumulation24hMm = 104;
             soilMoisturePct = 70; porePressureKPa = 52.6; insarDisplacementMm = 6.8; slopeInstabilityPct = 76;
             roadStatus = 'AT RISK'; forecastTrend = 'INCREASING'; forecastTo = 'CRITICAL';
           } else if (stage === 5) {
-            riskScore = 92; riskLevel = 'CRITICAL'; rainfallRateMmHr = 42.5; accumulation24hMm = 168.4;
+            riskScore = 93; riskLevel = 'CRITICAL'; rainfallRateMmHr = 42.5; accumulation24hMm = 168.4;
             soilMoisturePct = 84; porePressureKPa = 58.4; insarDisplacementMm = -28.4; slopeInstabilityPct = 91;
             roadStatus = 'BLOCKED'; forecastTrend = 'INCREASING'; forecastTo = 'CRITICAL';
           } else if (stage === 6) {
-            riskScore = 48; riskLevel = 'MODERATE'; rainfallRateMmHr = 5; accumulation24hMm = 120;
+            riskScore = 60; riskLevel = 'MODERATE'; rainfallRateMmHr = 5; accumulation24hMm = 120;
             soilMoisturePct = 55; porePressureKPa = 28.0; insarDisplacementMm = -28.8; slopeInstabilityPct = 45;
             roadStatus = 'OPEN'; forecastTrend = 'DECREASING'; forecastTo = 'LOW';
           }
