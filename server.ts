@@ -48,7 +48,7 @@ function getGeminiClient(): GoogleGenAI | null {
 // returns stage-matching telemetry.
 // -----------------------------------------------------------------------------
 interface ScenarioState {
-  stage: 1 | 2 | 3 | 4 | 5;
+  stage: 1 | 2 | 3 | 4 | 5 | 6;
   scenarioId: string;
   updatedAt: string;
 }
@@ -59,6 +59,7 @@ const STAGE_WEATHER: Record<number, { rainfallRateMmHr: number; accumulation24hM
   3: { rainfallRateMmHr: 34,   accumulation24hMm: 86,    intensityLabel: 'HEAVY DOWNPOUR',    trend: 'INCREASING', humidityPct: 90 },
   4: { rainfallRateMmHr: 40,   accumulation24hMm: 104,   intensityLabel: 'HEAVY DOWNPOUR',    trend: 'INCREASING', humidityPct: 93 },
   5: { rainfallRateMmHr: 42.5, accumulation24hMm: 168.4, intensityLabel: 'TORRENTIAL MONSOON', trend: 'INCREASING', humidityPct: 95 },
+  6: { rainfallRateMmHr: 5,    accumulation24hMm: 120,   intensityLabel: 'NORMAL',           trend: 'DECREASING', humidityPct: 75 },
 };
 
 const STAGE_ZONE_N07: Record<number, { riskScore: number; riskLevel: string; soilMoisturePct: number; porePressureKPa: number; insarDisplacementMm: number; slopeInstabilityPct: number; roadStatus: string }> = {
@@ -67,9 +68,13 @@ const STAGE_ZONE_N07: Record<number, { riskScore: number; riskLevel: string; soi
   3: { riskScore: 76, riskLevel: 'HIGH',     soilMoisturePct: 62, porePressureKPa: 42.0, insarDisplacementMm: 4.1,  slopeInstabilityPct: 68, roadStatus: 'AT RISK' },
   4: { riskScore: 86, riskLevel: 'HIGH',     soilMoisturePct: 70, porePressureKPa: 52.6, insarDisplacementMm: 6.8,  slopeInstabilityPct: 76, roadStatus: 'AT RISK' },
   5: { riskScore: 92, riskLevel: 'CRITICAL', soilMoisturePct: 74, porePressureKPa: 58.4, insarDisplacementMm: 8.4,  slopeInstabilityPct: 79, roadStatus: 'AT RISK' },
+  6: { riskScore: 48, riskLevel: 'MODERATE', soilMoisturePct: 55, porePressureKPa: 28.0, insarDisplacementMm: 8.8,  slopeInstabilityPct: 45, roadStatus: 'OPEN' },
 };
 
 let activeScenario: ScenarioState = { stage: 5, scenarioId: 'aizawl-monsoon', updatedAt: new Date().toISOString() };
+
+// Initialize dbStore scenario state at baseline startup to match
+dbStore.setScenario(activeScenario.stage, activeScenario.scenarioId);
 
 // -----------------------------------------------------------------------------
 // 1. Health & Integration Status API
@@ -100,26 +105,28 @@ app.get("/api/health", (_req, res) => {
 // -----------------------------------------------------------------------------
 app.post("/api/scenario", (req, res) => {
   const { stage, scenarioId } = req.body;
-  if (stage && [1, 2, 3, 4, 5].includes(Number(stage))) {
+  if (stage && [1, 2, 3, 4, 5, 6].includes(Number(stage))) {
     activeScenario = {
-      stage: Number(stage) as 1 | 2 | 3 | 4 | 5,
+      stage: Number(stage) as 1 | 2 | 3 | 4 | 5 | 6,
       scenarioId: scenarioId || activeScenario.scenarioId,
       updatedAt: new Date().toISOString()
     };
+    dbStore.setScenario(activeScenario.stage, activeScenario.scenarioId);
   }
   res.json({ success: true, activeScenario });
 });
 
 app.get("/api/scenario-state", (_req, res) => {
+  const state = dbStore.getScenarioState();
   const stageData = STAGE_WEATHER[activeScenario.stage];
   const zoneData = STAGE_ZONE_N07[activeScenario.stage];
   res.json({
     success: true,
-    activeScenario,
+    activeScenario: state.activeScenario,
     stageWeather: stageData,
     stageZoneN07: zoneData,
-    factorOfSafety: Number((1.85 - (zoneData.riskScore / 100) * 1.1).toFixed(2)),
-    ruptureHorizonHours: zoneData.riskScore >= 85 ? 2.5 : zoneData.riskScore >= 70 ? 5.0 : 12.0
+    factorOfSafety: state.factorOfSafety,
+    ruptureHorizonHours: state.ruptureHorizonHours
   });
 });
 

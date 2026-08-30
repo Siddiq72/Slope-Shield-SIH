@@ -1,10 +1,10 @@
 import fs from "fs";
 import path from "path";
-import { 
-  serverRiskZones, 
-  serverSensors, 
-  serverAlerts, 
-  serverFieldReports, 
+import {
+  serverRiskZones,
+  serverSensors,
+  serverAlerts,
+  serverFieldReports,
   serverEmergencyPriorities,
   ServerRiskZone,
   ServerFieldReport
@@ -107,11 +107,111 @@ const initialHistoricalAssessments: ServerRiskAssessment[] = [
   }
 ];
 
+const STAGE_WEATHER_MAP: Record<number, { rainfallRateMmHr: number; accumulation24hMm: number; intensityLabel: string; trend: string; humidityPct: number }> = {
+  1: { rainfallRateMmHr: 4,    accumulation24hMm: 16,    intensityLabel: 'NORMAL',           trend: 'STABLE',     humidityPct: 72 },
+  2: { rainfallRateMmHr: 22,   accumulation24hMm: 52,    intensityLabel: 'MODERATE RAIN',     trend: 'INCREASING', humidityPct: 82 },
+  3: { rainfallRateMmHr: 34,   accumulation24hMm: 86,    intensityLabel: 'HEAVY DOWNPOUR',    trend: 'INCREASING', humidityPct: 90 },
+  4: { rainfallRateMmHr: 40,   accumulation24hMm: 104,   intensityLabel: 'HEAVY DOWNPOUR',    trend: 'INCREASING', humidityPct: 93 },
+  5: { rainfallRateMmHr: 42.5, accumulation24hMm: 168.4, intensityLabel: 'TORRENTIAL MONSOON', trend: 'INCREASING', humidityPct: 95 },
+  6: { rainfallRateMmHr: 5,    accumulation24hMm: 120,   intensityLabel: 'NORMAL',           trend: 'DECREASING', humidityPct: 75 },
+};
+
+interface ZoneTelemetry {
+  riskScore: number;
+  riskLevel: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+  soilMoisturePct: number;
+  porePressureKPa: number;
+  insarDisplacementMm: number;
+  slopeInstabilityPct: number;
+  roadStatus: 'OPEN' | 'AT RISK' | 'BLOCKED';
+  recommendedAction: string;
+}
+
+const STAGE_TELEMETRY_MAP: Record<number, ZoneTelemetry> = {
+  1: { riskScore: 38, riskLevel: 'LOW',      soilMoisturePct: 34, porePressureKPa: 14.2, insarDisplacementMm: -0.6,  slopeInstabilityPct: 28, roadStatus: 'OPEN', recommendedAction: 'Routine automated telemetry polling. Visual spot-checks.' },
+  2: { riskScore: 58, riskLevel: 'MODERATE', soilMoisturePct: 48, porePressureKPa: 26.5, insarDisplacementMm: -1.8,  slopeInstabilityPct: 49, roadStatus: 'OPEN', recommendedAction: 'Monitor drainage channels and road shoulder cracks.' },
+  3: { riskScore: 76, riskLevel: 'HIGH',     soilMoisturePct: 62, porePressureKPa: 42.0, insarDisplacementMm: -4.1,  slopeInstabilityPct: 68, roadStatus: 'AT RISK', recommendedAction: 'Pre-position emergency clearing equipment. Regulate traffic.' },
+  4: { riskScore: 86, riskLevel: 'HIGH',     soilMoisturePct: 70, porePressureKPa: 52.6, insarDisplacementMm: -6.8,  slopeInstabilityPct: 76, roadStatus: 'AT RISK', recommendedAction: 'Deploy response units on standby. Restrict heavy traffic.' },
+  5: { riskScore: 92, riskLevel: 'CRITICAL', soilMoisturePct: 84, porePressureKPa: 58.4, insarDisplacementMm: -28.4, slopeInstabilityPct: 91, roadStatus: 'BLOCKED', recommendedAction: 'Execute Pre-Emptive Evacuation Order for Downslope Settlements.' },
+  6: { riskScore: 48, riskLevel: 'MODERATE', soilMoisturePct: 55, porePressureKPa: 28.0, insarDisplacementMm: -28.8, slopeInstabilityPct: 45, roadStatus: 'OPEN', recommendedAction: 'PWD debris clearance complete. Residents return under monitoring.' },
+};
+
+const sensorHistories: Record<number, Array<{ timestamp: string; soilMoisture: number; tilt: number; porePressure: number }>> = {
+  1: [
+    { timestamp: '10:00', soilMoisture: 30, tilt: 0.8, porePressure: 12 },
+    { timestamp: '11:00', soilMoisture: 31, tilt: 0.8, porePressure: 12.5 },
+    { timestamp: '12:00', soilMoisture: 32, tilt: 0.9, porePressure: 13 },
+    { timestamp: '13:00', soilMoisture: 33, tilt: 0.9, porePressure: 13.5 },
+    { timestamp: '14:00', soilMoisture: 34, tilt: 0.9, porePressure: 14.2 }
+  ],
+  2: [
+    { timestamp: '10:00', soilMoisture: 34, tilt: 0.9, porePressure: 14.2 },
+    { timestamp: '11:00', soilMoisture: 38, tilt: 1.1, porePressure: 17 },
+    { timestamp: '12:00', soilMoisture: 41, tilt: 1.3, porePressure: 20 },
+    { timestamp: '13:00', soilMoisture: 45, tilt: 1.6, porePressure: 23.5 },
+    { timestamp: '14:00', soilMoisture: 48, tilt: 1.8, porePressure: 26.5 }
+  ],
+  3: [
+    { timestamp: '10:00', soilMoisture: 48, tilt: 1.8, porePressure: 26.5 },
+    { timestamp: '11:00', soilMoisture: 52, tilt: 2.2, porePressure: 31 },
+    { timestamp: '12:00', soilMoisture: 55, tilt: 2.6, porePressure: 35 },
+    { timestamp: '13:00', soilMoisture: 58, tilt: 3.0, porePressure: 38.5 },
+    { timestamp: '14:00', soilMoisture: 62, tilt: 3.4, porePressure: 42.0 }
+  ],
+  4: [
+    { timestamp: '10:00', soilMoisture: 62, tilt: 3.4, porePressure: 42.0 },
+    { timestamp: '11:00', soilMoisture: 64, tilt: 3.7, porePressure: 45 },
+    { timestamp: '12:00', soilMoisture: 66, tilt: 4.0, porePressure: 48 },
+    { timestamp: '13:00', soilMoisture: 68, tilt: 4.4, porePressure: 50.5 },
+    { timestamp: '14:00', soilMoisture: 70, tilt: 4.7, porePressure: 52.6 }
+  ],
+  5: [
+    { timestamp: '10:00', soilMoisture: 70, tilt: 4.7, porePressure: 52.6 },
+    { timestamp: '11:00', soilMoisture: 73, tilt: 5.0, porePressure: 54.5 },
+    { timestamp: '12:00', soilMoisture: 76, tilt: 5.2, porePressure: 56 },
+    { timestamp: '13:00', soilMoisture: 80, tilt: 5.4, porePressure: 57.5 },
+    { timestamp: '14:00', soilMoisture: 84, tilt: 5.6, porePressure: 58.4 }
+  ],
+  6: [
+    { timestamp: '10:00', soilMoisture: 84, tilt: 5.6, porePressure: 58.4 },
+    { timestamp: '11:00', soilMoisture: 70, tilt: 5.7, porePressure: 50 },
+    { timestamp: '12:00', soilMoisture: 65, tilt: 5.7, porePressure: 42 },
+    { timestamp: '13:00', soilMoisture: 60, tilt: 5.7, porePressure: 34 },
+    { timestamp: '14:00', soilMoisture: 55, tilt: 5.7, porePressure: 28 }
+  ],
+};
+
 class LocalDatabaseManager {
   private data: PersistentDatabaseSchema;
+  private activeScenarioStage: number = 5;
+  private activeScenarioId: string = "aizawl-monsoon";
 
   constructor() {
     this.data = this.loadOrInitialize();
+  }
+
+  public setScenario(stage: number, scenarioId?: string) {
+    if (stage >= 1 && stage <= 6) {
+      this.activeScenarioStage = stage;
+      if (scenarioId) {
+        this.activeScenarioId = scenarioId;
+      }
+    }
+  }
+
+  public getScenarioState() {
+    const targetZoneCode = this.activeScenarioId === 'sonapur-corridor' ? 'N-03' : this.activeScenarioId === 'gangtok-seismic' ? 'N-11' : 'N-07';
+    const zone = this.getZones().find(z => z.code === targetZoneCode) || this.getZones()[0];
+    const score = zone.riskScore;
+    return {
+      activeScenario: {
+        stage: this.activeScenarioStage,
+        scenarioId: this.activeScenarioId,
+        updatedAt: new Date().toISOString()
+      },
+      factorOfSafety: Number((1.85 - (score / 100) * 1.1).toFixed(2)),
+      ruptureHorizonHours: score >= 85 ? 2.5 : score >= 70 ? 5.0 : 12.0
+    };
   }
 
   private loadOrInitialize(): PersistentDatabaseSchema {
@@ -169,23 +269,121 @@ class LocalDatabaseManager {
 
   // Zone operations
   public getZones(): ServerRiskZone[] {
-    return this.data.zones;
+    const stage = this.activeScenarioStage;
+    const targetZoneCode = this.activeScenarioId === 'sonapur-corridor' ? 'N-03' : this.activeScenarioId === 'gangtok-seismic' ? 'N-11' : 'N-07';
+
+    const stageTelemetry = STAGE_TELEMETRY_MAP[stage] || STAGE_TELEMETRY_MAP[5];
+    const stageWeather = STAGE_WEATHER_MAP[stage] || STAGE_WEATHER_MAP[5];
+
+    return this.data.zones.map((z) => {
+      if (z.code === targetZoneCode) {
+        const riskScore = stageTelemetry.riskScore;
+        const trend = stage === 6 ? 'DECREASING' : stage >= 2 ? 'INCREASING' : 'STABLE';
+        const forecastTo = stage === 6 ? 'LOW' : stage >= 3 ? 'CRITICAL' : stage === 2 ? 'HIGH' : 'LOW';
+
+        return {
+          ...z,
+          riskScore: riskScore,
+          riskLevel: stageTelemetry.riskLevel,
+          rainfallRateMmHr: stageWeather.rainfallRateMmHr,
+          accumulation24hMm: stageWeather.accumulation24hMm,
+          soilMoisturePct: stageTelemetry.soilMoisturePct,
+          porePressureKPa: stageTelemetry.porePressureKPa,
+          insarDisplacementMm: stageTelemetry.insarDisplacementMm,
+          slopeInstabilityPct: stageTelemetry.slopeInstabilityPct,
+          roadStatus: stageTelemetry.roadStatus,
+          recommendedAction: stageTelemetry.recommendedAction,
+          forecast6h: {
+            from: z.riskLevel,
+            to: forecastTo,
+            projectedScore: Math.min(99, Math.round(riskScore * 1.05)),
+            trend: trend
+          }
+        };
+      }
+      return z;
+    });
   }
 
   public getZoneByCode(code: string): ServerRiskZone | undefined {
-    return this.data.zones.find(
+    return this.getZones().find(
       z => z.code.toLowerCase() === code.toLowerCase() || z.id.toLowerCase() === code.toLowerCase()
     );
   }
 
   // Sensor operations
   public getSensors(): ServerSensor[] {
-    return this.data.sensors;
+    const stage = this.activeScenarioStage;
+    const targetZoneCode = this.activeScenarioId === 'sonapur-corridor' ? 'N-03' : this.activeScenarioId === 'gangtok-seismic' ? 'N-11' : 'N-07';
+    const targetSensorNodeId = this.activeScenarioId === 'sonapur-corridor' ? 'SN-03B' : this.activeScenarioId === 'gangtok-seismic' ? 'SN-11C' : 'SN-07A';
+
+    const stageTelemetry = STAGE_TELEMETRY_MAP[stage] || STAGE_TELEMETRY_MAP[5];
+    const sensorHistory = sensorHistories[stage] || sensorHistories[5];
+
+    return this.data.sensors.map((s) => {
+      if (s.nodeId === targetSensorNodeId) {
+        return {
+          ...s,
+          soilMoisturePct: stageTelemetry.soilMoisturePct,
+          slopeTiltDeg: stage === 5 ? 5.6 : stage === 4 ? 4.7 : stage === 3 ? 3.4 : stage === 2 ? 1.8 : stage === 6 ? 5.7 : 0.9,
+          porePressureKPa: stageTelemetry.porePressureKPa,
+          status: stageTelemetry.riskLevel === 'CRITICAL' ? 'WARNING' : stageTelemetry.riskLevel === 'HIGH' ? 'WARNING' : 'ONLINE',
+          history: sensorHistory
+        };
+      }
+      return s;
+    });
   }
 
   // Alert operations
   public getAlerts(): ServerAlert[] {
-    return this.data.alerts;
+    const stage = this.activeScenarioStage;
+    const targetZoneCode = this.activeScenarioId === 'sonapur-corridor' ? 'N-03' : this.activeScenarioId === 'gangtok-seismic' ? 'N-11' : 'N-07';
+
+    let alerts = [...this.data.alerts];
+
+    if (stage <= 2) {
+      alerts = alerts.filter(a => a.zoneCode !== targetZoneCode);
+    } else {
+      alerts = alerts.map((a) => {
+        if (a.zoneCode === targetZoneCode) {
+          let severity = STAGE_TELEMETRY_MAP[stage].riskLevel;
+          let headline = `SIMULATED ALERT: Accelerated Slope Instability at ${targetZoneCode}`;
+          let acknowledged = a.acknowledged;
+          let status: ServerAlert['status'] = 'PENDING REVIEW';
+
+          if (stage === 3) {
+            severity = 'HIGH';
+            headline = `ORANGE WARNING: Elevated Subsurface Saturation at ${targetZoneCode}`;
+            status = 'PENDING REVIEW';
+          } else if (stage === 4) {
+            severity = 'HIGH';
+            headline = `ORANGE WARNING: InSAR Creep & Tilt Displacement at ${targetZoneCode}`;
+            status = 'DISPATCHED';
+          } else if (stage === 5) {
+            severity = 'CRITICAL';
+            headline = `RED ALERT: Imminent Slope Shear Failure at ${targetZoneCode}`;
+            status = 'DISPATCHED';
+          } else if (stage === 6) {
+            severity = 'MODERATE';
+            headline = `RECOVERY ALERT: Stabilization & Cleanup In Progress at ${targetZoneCode}`;
+            status = 'DISPATCHED';
+            acknowledged = true;
+          }
+
+          return {
+            ...a,
+            severity,
+            headline,
+            acknowledged,
+            status,
+            riskScore: STAGE_TELEMETRY_MAP[stage].riskScore
+          };
+        }
+        return a;
+      });
+    }
+    return alerts;
   }
 
   public acknowledgeAlert(alertId: string): boolean {
@@ -239,7 +437,44 @@ class LocalDatabaseManager {
 
   // Emergency Priorities
   public getEmergencyPriorities(): ServerEmergencyPriority[] {
-    return this.data.emergencyPriorities;
+    const stage = this.activeScenarioStage;
+    const targetZoneCode = this.activeScenarioId === 'sonapur-corridor' ? 'N-03' : this.activeScenarioId === 'gangtok-seismic' ? 'N-11' : 'N-07';
+
+    const zones = this.getZones();
+
+    return this.data.emergencyPriorities.map((ep) => {
+      const zone = zones.find(z => z.code === ep.zoneCode);
+      if (zone) {
+        let status = 'STANDBY';
+        let evacuationStatus = ep.evacuationStatus;
+
+        if (stage === 1) {
+          status = 'STANDBY'; evacuationStatus = 'STANDBY MONITORING';
+        } else if (stage === 2) {
+          status = 'STANDBY'; evacuationStatus = 'STANDBY MONITORING';
+        } else if (stage === 3) {
+          status = 'MONITORING INTENSIVE'; evacuationStatus = 'IMMEDIATE FIELD VERIFICATION';
+        } else if (stage === 4) {
+          status = 'ELEVATED HAZARD'; evacuationStatus = 'ROAD CORRIDOR AT RISK';
+        } else if (stage === 5) {
+          status = 'ACTIVE EMERGENCY'; evacuationStatus = 'PRE-EMPTIVE EVACUATION ORDER';
+        } else if (stage === 6) {
+          status = 'STANDBY'; evacuationStatus = 'STANDBY MONITORING';
+        }
+
+        return {
+          ...ep,
+          riskScore: zone.riskScore,
+          severity: zone.riskLevel,
+          status,
+          evacuationStatus
+        };
+      }
+      return ep;
+    }).sort((a, b) => b.riskScore - a.riskScore).map((ep, idx) => ({
+      ...ep,
+      rank: idx + 1
+    }));
   }
 
   // Risk Assessments / History

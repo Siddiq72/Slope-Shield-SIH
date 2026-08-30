@@ -49,7 +49,94 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+active_scenario = {
+    "stage": 5,
+    "scenarioId": "aizawl-monsoon",
+    "updatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat()
+}
+
+STAGE_WEATHER_MAP = {
+    1: {"rainfallRateMmHr": 4.0,  "accumulation24hMm": 16.0,  "intensityLabel": "NORMAL",           "trend": "STABLE"},
+    2: {"rainfallRateMmHr": 22.0, "accumulation24hMm": 52.0,  "intensityLabel": "MODERATE RAIN",     "trend": "INCREASING"},
+    3: {"rainfallRateMmHr": 34.0, "accumulation24hMm": 86.0,  "intensityLabel": "HEAVY DOWNPOUR",    "trend": "INCREASING"},
+    4: {"rainfallRateMmHr": 40.0, "accumulation24hMm": 104.0, "intensityLabel": "HEAVY DOWNPOUR",    "trend": "INCREASING"},
+    5: {"rainfallRateMmHr": 42.5, "accumulation24hMm": 168.4, "intensityLabel": "TORRENTIAL MONSOON", "trend": "INCREASING"},
+    6: {"rainfallRateMmHr": 5.0,  "accumulation24hMm": 120.0, "intensityLabel": "NORMAL",           "trend": "DECREASING"},
+}
+
+STAGE_TELEMETRY_MAP = {
+    1: {"riskScore": 38, "riskLevel": "LOW",      "soilMoisturePct": 34.0, "porePressureKPa": 14.2, "insarDisplacementMm": -0.6,  "slopeInstabilityPct": 28.0, "roadStatus": "OPEN", "recommendedAction": "Routine automated telemetry polling. Visual spot-checks."},
+    2: {"riskScore": 58, "riskLevel": "MODERATE", "soilMoisturePct": 48.0, "porePressureKPa": 26.5, "insarDisplacementMm": -1.8,  "slopeInstabilityPct": 49.0, "roadStatus": "OPEN", "recommendedAction": "Monitor drainage channels and road shoulder cracks."},
+    3: {"riskScore": 76, "riskLevel": "HIGH",     "soilMoisturePct": 62.0, "porePressureKPa": 42.0, "insarDisplacementMm": -4.1,  "slopeInstabilityPct": 68.0, "roadStatus": "AT RISK", "recommendedAction": "Pre-position emergency clearing equipment. Regulate traffic."},
+    4: {"riskScore": 86, "riskLevel": "HIGH",     "soilMoisturePct": 70.0, "porePressureKPa": 52.6, "insarDisplacementMm": -6.8,  "slopeInstabilityPct": 76.0, "roadStatus": "AT RISK", "recommendedAction": "Deploy response units on standby. Restrict heavy traffic."},
+    5: {"riskScore": 92, "riskLevel": "CRITICAL", "soilMoisturePct": 84.0, "porePressureKPa": 58.4, "insarDisplacementMm": -28.4, "slopeInstabilityPct": 91.0, "roadStatus": "BLOCKED", "recommendedAction": "Execute Pre-Emptive Evacuation Order for Downslope Settlements."},
+    6: {"riskScore": 48, "riskLevel": "MODERATE", "soilMoisturePct": 55.0, "porePressureKPa": 28.0, "insarDisplacementMm": -28.8, "slopeInstabilityPct": 45.0, "roadStatus": "OPEN", "recommendedAction": "PWD debris clearance complete. Residents return under monitoring."},
+}
+
+sensor_histories_map = {
+    1: [
+        {"timestamp": "10:00", "soilMoisture": 30.0, "tilt": 0.8, "porePressure": 12.0},
+        {"timestamp": "11:00", "soilMoisture": 31.0, "tilt": 0.8, "porePressure": 12.5},
+        {"timestamp": "12:00", "soilMoisture": 32.0, "tilt": 0.9, "porePressure": 13.0},
+        {"timestamp": "13:00", "soilMoisture": 33.0, "tilt": 0.9, "porePressure": 13.5},
+        {"timestamp": "14:00", "soilMoisture": 34.0, "tilt": 0.9, "porePressure": 14.2}
+    ],
+    2: [
+        {"timestamp": "10:00", "soilMoisture": 34.0, "tilt": 0.9, "porePressure": 14.2},
+        {"timestamp": "11:00", "soilMoisture": 38.0, "tilt": 1.1, "porePressure": 17.0},
+        {"timestamp": "12:00", "soilMoisture": 41.0, "tilt": 1.3, "porePressure": 20.0},
+        {"timestamp": "13:00", "soilMoisture": 45.0, "tilt": 1.6, "porePressure": 23.5},
+        {"timestamp": "14:00", "soilMoisture": 48.0, "tilt": 1.8, "porePressure": 26.5}
+    ],
+    3: [
+        {"timestamp": "10:00", "soilMoisture": 48.0, "tilt": 1.8, "porePressure": 26.5},
+        {"timestamp": "11:00", "soilMoisture": 52.0, "tilt": 2.2, "porePressure": 31.0},
+        {"timestamp": "12:00", "soilMoisture": 55.0, "tilt": 2.6, "porePressure": 35.0},
+        {"timestamp": "13:00", "soilMoisture": 58.0, "tilt": 3.0, "porePressure": 38.5},
+        {"timestamp": "14:00", "soilMoisture": 62.0, "tilt": 3.4, "porePressure": 42.0}
+    ],
+    4: [
+        {"timestamp": "10:00", "soilMoisture": 62.0, "tilt": 3.4, "porePressure": 42.0},
+        {"timestamp": "11:00", "soilMoisture": 64.0, "tilt": 3.7, "porePressure": 45.0},
+        {"timestamp": "12:00", "soilMoisture": 66.0, "tilt": 4.0, "porePressure": 48.0},
+        {"timestamp": "13:00", "soilMoisture": 68.0, "tilt": 4.4, "porePressure": 50.5},
+        {"timestamp": "14:00", "soilMoisture": 70.0, "tilt": 4.7, "porePressure": 52.6}
+    ],
+    5: [
+        {"timestamp": "10:00", "soilMoisture": 70.0, "tilt": 4.7, "porePressure": 52.6},
+        {"timestamp": "11:00", "soilMoisture": 73.0, "tilt": 5.0, "porePressure": 54.5},
+        {"timestamp": "12:00", "soilMoisture": 76.0, "tilt": 5.2, "porePressure": 56.0},
+        {"timestamp": "13:00", "soilMoisture": 80.0, "tilt": 5.4, "porePressure": 57.5},
+        {"timestamp": "14:00", "soilMoisture": 84.0, "tilt": 5.6, "porePressure": 58.4}
+    ],
+    6: [
+        {"timestamp": "10:00", "soilMoisture": 84.0, "tilt": 5.6, "porePressure": 58.4},
+        {"timestamp": "11:00", "soilMoisture": 70.0, "tilt": 5.7, "porePressure": 50.0},
+        {"timestamp": "12:00", "soilMoisture": 65.0, "tilt": 5.7, "porePressure": 42.0},
+        {"timestamp": "13:00", "soilMoisture": 60.0, "tilt": 5.7, "porePressure": 34.0},
+        {"timestamp": "14:00", "soilMoisture": 55.0, "tilt": 5.7, "porePressure": 28.0}
+    ],
+}
+
 def zone_to_dict(z: RiskZoneModel) -> Dict[str, Any]:
+    target_zone_code = "N-03" if active_scenario["scenarioId"] == "sonapur-corridor" else "N-11" if active_scenario["scenarioId"] == "gangtok-seismic" else "N-07"
+    stage = active_scenario["stage"]
+    is_target = z.zone_code.upper() == target_zone_code.upper()
+
+    risk_score = STAGE_TELEMETRY_MAP[stage]["riskScore"] if is_target else z.risk_score
+    risk_level = STAGE_TELEMETRY_MAP[stage]["riskLevel"] if is_target else z.risk_level
+    rainfall_rate = STAGE_WEATHER_MAP[stage]["rainfallRateMmHr"] if is_target else z.rainfall_rate_mm_hr
+    accumulation = STAGE_WEATHER_MAP[stage]["accumulation24hMm"] if is_target else z.accumulation_24h_mm
+    soil_moisture = STAGE_TELEMETRY_MAP[stage]["soilMoisturePct"] if is_target else z.soil_moisture_pct
+    pore_pressure = STAGE_TELEMETRY_MAP[stage]["porePressureKPa"] if is_target else z.pore_pressure_kpa
+    insar_disp = STAGE_TELEMETRY_MAP[stage]["insarDisplacementMm"] if is_target else z.insar_displacement_mm
+    slope_instab = STAGE_TELEMETRY_MAP[stage]["slopeInstabilityPct"] if is_target else z.slope_instability_pct
+    road_status = STAGE_TELEMETRY_MAP[stage]["roadStatus"] if is_target else z.road_status
+    recommended_action = STAGE_TELEMETRY_MAP[stage]["recommendedAction"] if is_target else z.recommended_action
+
+    forecast_to = "LOW" if stage == 6 else "CRITICAL" if stage >= 3 else "HIGH" if stage == 2 else "LOW"
+    forecast_trend = "DECREASING" if stage == 6 else "INCREASING" if stage >= 2 else "STABLE"
+
     return {
         "id": z.id,
         "code": z.zone_code,
@@ -57,49 +144,61 @@ def zone_to_dict(z: RiskZoneModel) -> Dict[str, Any]:
         "district": z.district,
         "state": z.state,
         "coordinates": [z.latitude, z.longitude],
-        "riskScore": z.risk_score,
-        "riskLevel": z.risk_level,
+        "riskScore": risk_score,
+        "riskLevel": risk_level,
         "slopeAngleDeg": z.slope_angle_deg,
-        "soilMoisturePct": z.soil_moisture_pct,
-        "rainfallRateMmHr": z.rainfall_rate_mm_hr,
-        "accumulation24hMm": z.accumulation_24h_mm,
-        "porePressureKPa": z.pore_pressure_kpa,
-        "insarDisplacementMm": z.insar_displacement_mm,
+        "soilMoisturePct": soil_moisture,
+        "rainfallRateMmHr": rainfall_rate,
+        "accumulation24hMm": accumulation,
+        "porePressureKPa": pore_pressure,
+        "insarDisplacementMm": insar_disp,
         "historicalVulnerabilityPct": z.historical_vulnerability_pct,
-        "slopeInstabilityPct": z.slope_instability_pct,
-        "roadStatus": z.road_status,
+        "slopeInstabilityPct": slope_instab,
+        "roadStatus": road_status,
         "affectedRoad": z.affected_road,
         "forecast6h": {
-            "from": "MODERATE" if z.risk_score < 75 else "HIGH",
-            "to": z.risk_level,
-            "projectedScore": min(99, int(z.risk_score * 1.05)),
-            "trend": "INCREASING" if z.risk_score >= 70 else "STABLE"
+            "from": z.risk_level,
+            "to": forecast_to,
+            "projectedScore": min(99, int(risk_score * 1.05)),
+            "trend": forecast_trend
         },
         "populationAtRisk": z.population_at_risk,
         "sensorNodeId": z.sensor_node_id or f"SN-{z.zone_code.replace('-', '')}A",
         "lastUpdated": "Live Telemetry",
         "description": z.description or "",
-        "recommendedAction": z.recommended_action or ""
+        "recommendedAction": recommended_action
     }
 
 def sensor_to_dict(s: SensorReadingModel) -> Dict[str, Any]:
+    target_sensor_node_id = "SN-03B" if active_scenario["scenarioId"] == "sonapur-corridor" else "SN-11C" if active_scenario["scenarioId"] == "gangtok-seismic" else "SN-07A"
+    stage = active_scenario["stage"]
+    is_target = s.sensor_id.upper() == target_sensor_node_id.upper()
+
+    soil_moisture = STAGE_TELEMETRY_MAP[stage]["soilMoisturePct"] if is_target else s.soil_moisture
+    tilt = (5.6 if stage == 5 else 4.7 if stage == 4 else 3.4 if stage == 3 else 1.8 if stage == 2 else 5.7 if stage == 6 else 0.9) if is_target else s.tilt
+    pore_pressure = STAGE_TELEMETRY_MAP[stage]["porePressureKPa"] if is_target else s.pore_pressure
+    status = ("WARNING" if stage in [3, 4, 5] else "ONLINE") if is_target else s.status
+
     history = []
-    if s.history_json:
+    if is_target:
+        history = sensor_histories_map[stage]
+    elif s.history_json:
         try:
             history = json.loads(s.history_json)
         except Exception:
             pass
+
     return {
         "id": s.id,
         "nodeId": s.sensor_id,
         "nodeName": s.sensor_name,
         "zoneCode": s.zone.zone_code if s.zone else "N-07",
         "location": s.location,
-        "status": s.status,
+        "status": status,
         "isSimulated": s.is_simulated,
-        "soilMoisturePct": s.soil_moisture,
-        "slopeTiltDeg": s.tilt,
-        "porePressureKPa": s.pore_pressure,
+        "soilMoisturePct": soil_moisture,
+        "slopeTiltDeg": tilt,
+        "porePressureKPa": pore_pressure,
         "batteryPct": s.battery,
         "signalDbm": s.signal,
         "lastPing": "30s ago",
@@ -199,6 +298,39 @@ def emergency_to_dict(ep: EmergencyPriorityModel) -> Dict[str, Any]:
     }
 
 # -----------------------------------------------------------------------------
+# Scenario State Sync API
+# -----------------------------------------------------------------------------
+@app.post("/api/scenario")
+def update_scenario(payload: Dict[str, Any]):
+    global active_scenario
+    stage = payload.get("stage")
+    scenario_id = payload.get("scenarioId")
+    if stage and int(stage) in [1, 2, 3, 4, 5, 6]:
+        active_scenario = {
+            "stage": int(stage),
+            "scenarioId": scenario_id or active_scenario["scenarioId"],
+            "updatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        }
+    return {"success": True, "activeScenario": active_scenario}
+
+@app.get("/api/scenario-state")
+def get_scenario_state(db: Session = Depends(get_db)):
+    target_zone_code = "N-03" if active_scenario["scenarioId"] == "sonapur-corridor" else "N-11" if active_scenario["scenarioId"] == "gangtok-seismic" else "N-07"
+    zone = db.query(RiskZoneModel).filter(RiskZoneModel.zone_code.ilike(target_zone_code)).first()
+    score = STAGE_TELEMETRY_MAP[active_scenario["stage"]]["riskScore"] if zone else 50
+    return {
+        "success": True,
+        "activeScenario": active_scenario,
+        "stageWeather": STAGE_WEATHER_MAP[active_scenario["stage"]],
+        "stageZoneN07": {
+            "riskScore": score,
+            "riskLevel": STAGE_TELEMETRY_MAP[active_scenario["stage"]]["riskLevel"]
+        },
+        "factorOfSafety": round(1.85 - (score / 100) * 1.1, 2),
+        "ruptureHorizonHours": 2.5 if score >= 85 else 5.0 if score >= 70 else 12.0
+    }
+
+# -----------------------------------------------------------------------------
 # 1. Health & Integration Status API
 # -----------------------------------------------------------------------------
 @app.get("/api/health")
@@ -213,7 +345,8 @@ def health_check(db: Session = Depends(get_db)):
     return {
         "status": "ok",
         "node": "Slope Shield FastAPI Service (:8001 / SQLite)",
-        "phase": "Phase 3: Persistent Database & Historical Event Architecture",
+        "phase": "Phase 4: End-to-End Demo & Intelligence Engine",
+        "activeScenario": active_scenario,
         "database": {
             "type": "SQLite / SQLAlchemy ORM",
             "status": db_status,
@@ -232,14 +365,45 @@ def health_check(db: Session = Depends(get_db)):
 def get_dashboard(db: Session = Depends(get_db)):
     zones = db.query(RiskZoneModel).all()
     sensors = db.query(SensorReadingModel).all()
-    alerts = db.query(AlertModel).all()
-    priorities = db.query(EmergencyPriorityModel).all()
     weather = db.query(WeatherReadingModel).first()
     satellite = db.query(SatelliteObservationModel).first()
 
-    high_risk_count = sum(1 for z in zones if z.risk_level == "HIGH") + 8
-    critical_count = sum(1 for z in zones if z.risk_level == "CRITICAL")
-    active_alerts_count = sum(1 for a in alerts if not a.acknowledged) + 2
+    mapped_zones = [zone_to_dict(z) for z in zones]
+    mapped_sensors = [sensor_to_dict(s) for s in sensors]
+
+    # Dynamic alerts list
+    alerts_response = get_alerts(db)
+    mapped_alerts = alerts_response["data"]
+
+    # Dynamic emergency priorities
+    priorities_response = get_emergency_priorities(db)
+    mapped_priorities = priorities_response["data"]
+
+    stage = active_scenario["stage"]
+    high_risk_count = sum(1 for z in mapped_zones if z["riskLevel"] == "HIGH") + 8
+    critical_count = sum(1 for z in mapped_zones if z["riskLevel"] == "CRITICAL")
+    active_alerts_count = sum(1 for a in mapped_alerts if not a["acknowledged"]) + 2
+
+    rain_rate = STAGE_WEATHER_MAP[stage]["rainfallRateMmHr"]
+    accum_24h = STAGE_WEATHER_MAP[stage]["accumulation24hMm"]
+    intensity = STAGE_WEATHER_MAP[stage]["intensityLabel"]
+    trend = STAGE_WEATHER_MAP[stage]["trend"]
+
+    disp = -28.4
+    if stage == 1:
+        disp = -0.6
+    elif stage == 2:
+        disp = -1.8
+    elif stage == 3:
+        disp = -4.1
+    elif stage == 4:
+        disp = -6.8
+    elif stage == 5:
+        disp = -28.4
+    elif stage == 6:
+        disp = -28.8
+
+    disp_status = "STABLE" if stage in [1, 2, 6] else "ELEVATED VELOCITY" if stage == 5 else "DISPLACEMENT DETECTED"
 
     return {
         "success": True,
@@ -250,20 +414,20 @@ def get_dashboard(db: Session = Depends(get_db)):
                 "criticalCount": critical_count,
                 "activeAlertsCount": active_alerts_count
             },
-            "zones": [zone_to_dict(z) for z in zones],
-            "sensors": [sensor_to_dict(s) for s in sensors],
+            "zones": mapped_zones,
+            "sensors": mapped_sensors,
             "weather": {
                 "stationId": weather.station_id if weather else "AWS-NER-07",
                 "zoneCode": "N-07",
                 "location": weather.station_location if weather else "Aizawl West Doppler Station",
-                "rainfallRateMmHr": weather.rainfall_rate if weather else 42.5,
-                "intensityLabel": weather.intensity_label if weather else "TORRENTIAL MONSOON",
-                "accumulation24hMm": weather.rainfall_24h if weather else 168.4,
-                "accumulation72hMm": weather.rainfall_72h if weather else 312.0,
-                "trend": weather.forecast_trend if weather else "INCREASING",
-                "humidityPct": weather.humidity if weather else 95,
-                "windSpeedKmh": weather.wind_speed if weather else 28,
-                "pressureHpa": weather.pressure_hpa if weather else 986,
+                "rainfallRateMmHr": rain_rate,
+                "intensityLabel": intensity,
+                "accumulation24hMm": accum_24h,
+                "accumulation72hMm": 312.0,
+                "trend": trend,
+                "humidityPct": 95 if rain_rate > 30 else 80,
+                "windSpeedKmh": 28,
+                "pressureHpa": 986,
                 "isSimulatedFeed": True
             },
             "satellite": {
@@ -271,9 +435,9 @@ def get_dashboard(db: Session = Depends(get_db)):
                 "satelliteName": satellite.satellite_name if satellite else "Sentinel-1A",
                 "sensorType": satellite.sensor_type if satellite else "C-band SAR / InSAR",
                 "targetRegion": satellite.target_region if satellite else "Hunthar Ridge & Mizoram Fold Belt",
-                "surfaceMotionMm": satellite.displacement if satellite else -28.4,
+                "surfaceMotionMm": disp,
                 "motionDirection": satellite.motion_direction if satellite else "SUBSIDENCE / DOWNSLOPE",
-                "displacementStatus": satellite.status if satellite else "DISPLACEMENT DETECTED",
+                "displacementStatus": disp_status,
                 "observationPeriodDays": 12,
                 "lastPassDate": satellite.observation_date if satellite else "Yesterday 18:30 UTC",
                 "passType": "Ascending Orbit",
@@ -281,8 +445,8 @@ def get_dashboard(db: Session = Depends(get_db)):
                 "coherenceScore": satellite.coherence if satellite else 0.88,
                 "integrationStatus": "ACTIVE REAL-TIME STREAM"
             },
-            "alerts": [alert_to_dict(a) for a in alerts],
-            "emergencyPriorities": [emergency_to_dict(ep) for ep in priorities],
+            "alerts": mapped_alerts,
+            "emergencyPriorities": mapped_priorities,
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
         }
     }
@@ -319,7 +483,7 @@ def get_risk_analysis(zone_id: str, db: Session = Depends(get_db)):
     ).first()
     if not zone:
         zone = db.query(RiskZoneModel).first()
-    
+
     if not zone:
         raise HTTPException(status_code=404, detail="No risk zones available in database")
 
@@ -452,7 +616,35 @@ def get_zone_sensors(zone_id: str, db: Session = Depends(get_db)):
 @app.get("/api/alerts")
 def get_alerts(db: Session = Depends(get_db)):
     alerts = db.query(AlertModel).order_by(AlertModel.created_at.desc()).all()
-    return {"success": True, "data": [alert_to_dict(a) for a in alerts], "count": len(alerts)}
+    target_zone_code = "N-03" if active_scenario["scenarioId"] == "sonapur-corridor" else "N-11" if active_scenario["scenarioId"] == "gangtok-seismic" else "N-07"
+    stage = active_scenario["stage"]
+
+    result = []
+    for a in alerts:
+        zone_code = a.zone.zone_code if a.zone else "N-07"
+        if zone_code.upper() == target_zone_code.upper():
+            if stage <= 2:
+                continue
+            ad = alert_to_dict(a)
+            ad["riskScore"] = STAGE_TELEMETRY_MAP[stage]["riskScore"]
+            ad["severity"] = STAGE_TELEMETRY_MAP[stage]["riskLevel"]
+            ad["acknowledged"] = (stage == 6)
+            if stage == 3:
+                ad["headline"] = f"ORANGE WARNING: Elevated Subsurface Saturation at {target_zone_code}"
+                ad["status"] = "PENDING REVIEW"
+            elif stage == 4:
+                ad["headline"] = f"ORANGE WARNING: InSAR Creep & Tilt Displacement at {target_zone_code}"
+                ad["status"] = "DISPATCHED"
+            elif stage == 5:
+                ad["headline"] = f"RED ALERT: Imminent Slope Shear Failure at {target_zone_code}"
+                ad["status"] = "DISPATCHED"
+            elif stage == 6:
+                ad["headline"] = f"RECOVERY ALERT: Stabilization & Cleanup In Progress at {target_zone_code}"
+                ad["status"] = "DISPATCHED"
+            result.append(ad)
+        else:
+            result.append(alert_to_dict(a))
+    return {"success": True, "data": result, "count": len(result)}
 
 @app.post("/api/alerts/acknowledge")
 def acknowledge_alert(payload: Dict[str, str], db: Session = Depends(get_db)):
@@ -540,8 +732,40 @@ def update_report(report_id: str, payload: Dict[str, Any], db: Session = Depends
 # -----------------------------------------------------------------------------
 @app.get("/api/emergency-priorities")
 def get_emergency_priorities(db: Session = Depends(get_db)):
-    priorities = db.query(EmergencyPriorityModel).order_by(EmergencyPriorityModel.priority_rank.asc()).all()
-    return {"success": True, "data": [emergency_to_dict(ep) for ep in priorities], "count": len(priorities)}
+    priorities = db.query(EmergencyPriorityModel).all()
+    target_zone_code = "N-03" if active_scenario["scenarioId"] == "sonapur-corridor" else "N-11" if active_scenario["scenarioId"] == "gangtok-seismic" else "N-07"
+    stage = active_scenario["stage"]
+
+    result = []
+    for ep in priorities:
+        ep_dict = emergency_to_dict(ep)
+        if ep.zone_code.upper() == target_zone_code.upper():
+            risk_score = STAGE_TELEMETRY_MAP[stage]["riskScore"]
+            severity = STAGE_TELEMETRY_MAP[stage]["riskLevel"]
+            status = "STANDBY"
+            evac_status = "STANDBY MONITORING"
+
+            if stage == 3:
+                status = "MONITORING INTENSIVE"
+                evac_status = "IMMEDIATE FIELD VERIFICATION"
+            elif stage == 4:
+                status = "ELEVATED HAZARD"
+                evac_status = "ROAD CORRIDOR AT RISK"
+            elif stage == 5:
+                status = "ACTIVE EMERGENCY"
+                evac_status = "PRE-EMPTIVE EVACUATION ORDER"
+
+            ep_dict["riskScore"] = risk_score
+            ep_dict["severity"] = severity
+            ep_dict["status"] = status
+            ep_dict["evacuationStatus"] = evac_status
+        result.append(ep_dict)
+
+    result.sort(key=lambda x: x["riskScore"], reverse=True)
+    for idx, r in enumerate(result):
+        r["rank"] = idx + 1
+
+    return {"success": True, "data": result, "count": len(result)}
 
 # -----------------------------------------------------------------------------
 # 10. Weather & Satellite API
@@ -551,7 +775,7 @@ def get_weather(zone_id: str, db: Session = Depends(get_db)):
     zone = db.query(RiskZoneModel).filter(
         (RiskZoneModel.zone_code.ilike(zone_id)) | (RiskZoneModel.id.ilike(zone_id))
     ).first()
-    
+
     rainfall_rate = zone.rainfall_rate_mm_hr if zone else 42.5
     accum_24h = zone.accumulation_24h_mm if zone else 168.4
 
