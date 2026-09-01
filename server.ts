@@ -5,6 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { dbStore } from "./server/database/dbStore";
 import { computeZoneExplainability, computeParametricSimulation, calculateRisk } from "./server/services/riskEngine";
+import { evaluateEarlyWarning } from "./server/services/earlyWarningEngine";
 import { STAGE_WEATHER, STAGE_TELEMETRY } from "./src/data/stageMaps";
 
 dotenv.config();
@@ -347,8 +348,61 @@ app.get("/api/sensors/:zoneId", (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// 6. Early Warning Dispatch & Alerts API
+// 6. Early Warning Decision Engine & Dispatch Alerts API
 // -----------------------------------------------------------------------------
+app.get("/api/early-warning", (req, res) => {
+  const stage = Number(req.query.stage) || activeScenario.stage;
+  const targetZoneCode = (req.query.zoneCode as string) || (activeScenario.scenarioId === 'sonapur-corridor' ? 'N-03' : activeScenario.scenarioId === 'gangtok-seismic' ? 'N-11' : 'N-07');
+
+  const stageWeather = STAGE_WEATHER[stage] || STAGE_WEATHER[5];
+  const telemetry = STAGE_TELEMETRY[stage] || STAGE_TELEMETRY[5];
+
+  const result = evaluateEarlyWarning({
+    zoneCode: targetZoneCode,
+    rainfallRateMmHr: stageWeather.rainfallRateMmHr,
+    accumulation24hMm: stageWeather.accumulation24hMm,
+    soilMoisturePct: telemetry.soilMoisturePct,
+    porePressureKPa: telemetry.porePressureKPa,
+    slopeTiltDeg: telemetry.slopeTiltDeg,
+    insarDisplacementMm: telemetry.insarDisplacementMm,
+    slopeInstabilityPct: telemetry.slopeInstabilityPct,
+    roadStatus: telemetry.roadStatus,
+    stage: stage as any,
+  });
+
+  // Simple deduplication & alert persistence
+  if (result.triggered) {
+    const existingAlerts = dbStore.getAlerts();
+    const existingSameZone = existingAlerts.find(a => a.zoneCode === targetZoneCode);
+    if (!existingSameZone || existingSameZone.severity !== result.level) {
+      dbStore.addAlert({
+        id: `alt-${Date.now()}`,
+        alertCode: `ALT-${new Date().getFullYear()}-${targetZoneCode.replace('-', '')}`,
+        severity: result.level,
+        zoneCode: targetZoneCode,
+        locationName: result.affectedZoneName,
+        district: result.district,
+        state: result.state,
+        riskScore: result.riskScore,
+        headline: `${result.level} EARLY WARNING: Multi-Factor Threat at ${targetZoneCode}`,
+        summary: result.reasons.join(". "),
+        timestamp: result.timestamp,
+        minutesAgo: 0,
+        contributingTriggers: result.contributingTriggers,
+        threatenedCorridor: telemetry.roadStatus === 'BLOCKED' ? 'NH-54 Escarpment Corridor (BLOCKED)' : 'Arterial Transport Link',
+        status: result.level === 'CRITICAL' ? 'DISPATCHED' : 'PENDING REVIEW',
+        dispatchedTo: ['DDMA Incident Commander', 'SDRF Emergency Roster'],
+        acknowledged: false
+      });
+    }
+  }
+
+  res.json({
+    success: true,
+    data: result
+  });
+});
+
 app.get("/api/alerts", (_req, res) => {
   const alerts = dbStore.getAlerts();
   res.json({

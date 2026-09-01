@@ -129,3 +129,11 @@ export const scenarioApi = {
     }
   }
 };
+
+export const earlyWarningApi = {
+  async getEarlyWarning(zoneCode?: string, stage?: number): Promise<ApiResponse<any>> {
+    return apiClient.get('/early-warning', {
+      params: { zoneCode, stage }
+    });
+  }
+};

@@ -30,6 +30,7 @@ import {
 import { scenarioApi } from '../services/allApis';
 import { STAGE_WEATHER, STAGE_TELEMETRY, STAGE_SENSOR_HISTORIES } from '../data/stageMaps';
 import { calculateRisk } from '../../server/services/riskEngine';
+import { evaluateEarlyWarning, EarlyWarningResult } from '../../server/services/earlyWarningEngine';
 export type DemoStage = 1 | 2 | 3 | 4 | 5 | 6;
 interface DemoScenario {
   id: string;
@@ -103,6 +104,9 @@ export interface DemoContextType {
   // Audio chime
   audioWarningMuted: boolean;
   toggleAudioWarning: () => void;
+
+  // Early-Warning Decision Engine Output
+  earlyWarningResult: EarlyWarningResult | null;
 }
 const STAGE_TITLES: Record<DemoStage, string> = {
   1: 'Stage 1: Stable Baseline Monitoring (Normal)',
@@ -123,6 +127,7 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [alerts, setAlerts] = useState<Alert[]>(initialAlerts);
   const [reports, setReports] = useState<FieldReport[]>(initialFieldReports);
   const [emergencyPriorities, setEmergencyPriorities] = useState<EmergencyPriority[]>(initialEmergencyPriorities);
+  const [earlyWarningResult, setEarlyWarningResult] = useState<EarlyWarningResult | null>(null);
   
   // API State
   const [apiSource, setApiSource] = useState<'BACKEND_API' | 'DEMO_FALLBACK'>('BACKEND_API');
@@ -307,62 +312,82 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
     );
 
-    // Dynamically Filter & Update Alerts
+    // Run Early-Warning Decision Engine for active stage telemetry
+    const stageTelemetry = STAGE_TELEMETRY[stage];
+    const stageWeather = STAGE_WEATHER[stage];
+    const decisionResult = evaluateEarlyWarning({
+      zoneCode: targetZoneCode,
+      rainfallRateMmHr: stageWeather.rainfallRateMmHr,
+      accumulation24hMm: stageWeather.accumulation24hMm,
+      soilMoisturePct: stageTelemetry.soilMoisturePct,
+      porePressureKPa: stageTelemetry.porePressureKPa,
+      slopeTiltDeg: stageTelemetry.slopeTiltDeg,
+      insarDisplacementMm: stageTelemetry.insarDisplacementMm,
+      slopeInstabilityPct: stageTelemetry.slopeInstabilityPct,
+      roadStatus: stageTelemetry.roadStatus,
+      stage: stage,
+    });
+
+    setEarlyWarningResult(decisionResult);
+
+    // Dynamically Filter & Update Alerts using Decision Engine Outputs
     setAlerts((prev) => {
       let updatedAlerts = [...initialAlerts];
-      if (stage <= 2) {
+      if (stage === 1) {
         updatedAlerts = updatedAlerts.filter((a) => a.zoneCode !== targetZoneCode);
       } else {
-        updatedAlerts = updatedAlerts.map((a) => {
-          if (a.zoneCode === targetZoneCode) {
-            let severity: RiskLevel = 'HIGH';
-            let headline = `SIMULATED ALERT: Accelerated Slope Instability at ${targetZoneCode}`;
-            let acknowledged = false;
-            let status: Alert['status'] = 'PENDING REVIEW';
-            if (stage === 3) {
-              severity = 'HIGH';
-              headline = `ORANGE WARNING: Elevated Subsurface Saturation at ${targetZoneCode}`;
-              status = 'PENDING REVIEW';
-            } else if (stage === 4) {
-              severity = 'HIGH';
-              headline = `ORANGE WARNING: InSAR Creep & Tilt Displacement at ${targetZoneCode}`;
-              status = 'DISPATCHED';
-            } else if (stage === 5) {
-              severity = 'CRITICAL';
-              headline = `RED ALERT: Imminent Slope Shear Failure at ${targetZoneCode}`;
-              status = 'DISPATCHED';
-              playAlertChime();
-            } else if (stage === 6) {
-              severity = 'MODERATE';
-              headline = `RECOVERY ALERT: Stabilization & Cleanup In Progress at ${targetZoneCode}`;
-              status = 'DISPATCHED';
-              acknowledged = true;
+        const hasExisting = updatedAlerts.some((a) => a.zoneCode === targetZoneCode);
+        if (decisionResult.level === 'CRITICAL') {
+          playAlertChime();
+        }
+
+        if (hasExisting) {
+          updatedAlerts = updatedAlerts.map((a) => {
+            if (a.zoneCode === targetZoneCode) {
+              let headline = `${decisionResult.level} EARLY WARNING: Multi-Factor Threat at ${targetZoneCode}`;
+              let acknowledged = false;
+              let status: Alert['status'] = decisionResult.level === 'CRITICAL' ? 'DISPATCHED' : decisionResult.level === 'HIGH' ? 'DISPATCHED' : 'PENDING REVIEW';
+
+              if (stage === 6) {
+                headline = `RECOVERY ALERT: Stabilization & De-escalation In Progress at ${targetZoneCode}`;
+                status = 'DISPATCHED';
+                acknowledged = true;
+              }
+
+              return {
+                ...a,
+                severity: decisionResult.level,
+                headline,
+                summary: decisionResult.reasons.join(". "),
+                contributingTriggers: decisionResult.contributingTriggers,
+                acknowledged,
+                status,
+                riskScore: decisionResult.riskScore
+              };
             }
-
-            const telemetry = STAGE_TELEMETRY[stage];
-            const weatherData = STAGE_WEATHER[stage];
-            const calc = calculateRisk({
-              rainfallRateMmHr: weatherData.rainfallRateMmHr,
-              accumulation24hMm: weatherData.accumulation24hMm,
-              soilMoisturePct: telemetry.soilMoisturePct,
-              porePressureKPa: telemetry.porePressureKPa,
-              slopeInstabilityPct: telemetry.slopeInstabilityPct,
-              insarDisplacementMm: telemetry.insarDisplacementMm,
-              historicalVulnerabilityPct: 88,
-              slopeAngleDeg: 48
-            });
-
-            return {
-              ...a,
-              severity: calc.severity,
-              headline,
-              acknowledged,
-              status,
-              riskScore: calc.score
-            };
-          }
-          return a;
-        });
+            return a;
+          });
+        } else {
+          updatedAlerts.unshift({
+            id: `alt-${Date.now()}`,
+            alertCode: `ALT-${new Date().getFullYear()}-${targetZoneCode.replace('-', '')}`,
+            severity: decisionResult.level,
+            zoneCode: targetZoneCode,
+            locationName: decisionResult.affectedZoneName,
+            district: decisionResult.district,
+            state: decisionResult.state,
+            riskScore: decisionResult.riskScore,
+            headline: `${decisionResult.level} EARLY WARNING: Multi-Factor Threat at ${targetZoneCode}`,
+            summary: decisionResult.reasons.join(". "),
+            timestamp: decisionResult.timestamp,
+            minutesAgo: 0,
+            contributingTriggers: decisionResult.contributingTriggers,
+            threatenedCorridor: stageTelemetry.roadStatus === 'BLOCKED' ? 'NH-54 Escarpment Corridor (BLOCKED)' : 'Arterial Transport Link',
+            status: decisionResult.level === 'CRITICAL' ? 'DISPATCHED' : 'PENDING REVIEW',
+            dispatchedTo: ['DDMA Incident Commander', 'SDRF Emergency Roster'],
+            acknowledged: false
+          });
+        }
       }
       return updatedAlerts;
     });
@@ -534,7 +559,8 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
         submitFieldReport,
         updateReportStatus,
         audioWarningMuted,
-        toggleAudioWarning
+        toggleAudioWarning,
+        earlyWarningResult
       }}
     >
       {children}
