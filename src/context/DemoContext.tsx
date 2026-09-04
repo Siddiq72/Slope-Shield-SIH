@@ -194,6 +194,7 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     refreshBackendData();
   }, [refreshBackendData]);
+
   // Apply stage parameters
   const applyStageData = useCallback((stage: DemoStage) => {
     setDemoStageState(stage);
@@ -439,6 +440,12 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }));
     });
   }, [playAlertChime, activeScenarioId]);
+
+  // Initial stage calculation on mount
+  useEffect(() => {
+    applyStageData(demoStage);
+  }, [applyStageData]);
+
   const nextDemoStage = () => {
     const next = (demoStage >= 6 ? 1 : ((demoStage + 1) as DemoStage));
     applyStageData(next);

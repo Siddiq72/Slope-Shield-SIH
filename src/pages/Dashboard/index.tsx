@@ -29,6 +29,7 @@ import { ActiveAlertsPanel } from '../../components/alerts/ActiveAlertsPanel';
 import { ResponsePriorityPanel } from '../../components/emergency/ResponsePriorityPanel';
 import { SectionHeader } from '../../components/common/SectionHeader';
 import { DemoScenarioPanel } from '../../components/demo/DemoScenarioPanel';
+import { EarlyWarningPanel } from '../../components/risk/EarlyWarningPanel';
 
 export const DashboardPage: React.FC = () => {
   const { zones, alerts, selectedZone, setSelectedZoneCode, setActiveTab } = useDemo();
@@ -69,6 +70,9 @@ export const DashboardPage: React.FC = () => {
 
       {/* Demo Scenario Control Panel */}
       <DemoScenarioPanel />
+
+      {/* Early Warning Intelligence Panel */}
+      <EarlyWarningPanel />
 
       {/* 4 Big KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
